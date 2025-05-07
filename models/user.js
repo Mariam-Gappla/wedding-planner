@@ -1,10 +1,10 @@
 const { required } = require('joi');
 const mongoose=require('mongoose');
-mongoose.connect("mongodb://127.0.0.1:27017/Zafa").then(()=>{
-    console.log("connected to database")
-}).catch((err)=>{
-    console.log("error connecting to database")
-});
+// mongoose.connect("mongodb://127.0.0.1:27017/Zafa").then(()=>{
+//     console.log("connected to database")
+// }).catch((err)=>{
+//     console.log("error connecting to database")
+// });
 const userSchema=new mongoose.Schema({
    username:{
         type:"string",
