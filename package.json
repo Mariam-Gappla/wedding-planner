@@ -3,12 +3,13 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "index.js"
+    "start": "node .",
+    "dev": "nodemon .",
+    "debug": "node --inspect ."
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
   "dependencies": {
     "bcrypt": "^5.1.1",
     "bcryptjs": "^3.0.2",
@@ -16,6 +17,8 @@
     "express": "^5.1.0",
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.14.0"
-  }
+    "mongoose": "^8.14.0",
+    "nodemon": "^3.1.10"
+  },
+  "description": ""
 }
