@@ -1,4 +1,3 @@
-const { required } = require('joi');
 const mongoose=require('mongoose');
 mongoose.connect("mongodb://127.0.0.1:27017/Zafa").then(()=>{
     console.log("connected to database")
@@ -20,6 +19,12 @@ const userSchema=new mongoose.Schema({
         type:"string",
         required:true,
     },
+    /*
+    bussiness_type:{
+        type:"string",
+        enum:[""]
+    },
+    */
    role:{
     type:"string",
     required:true,
