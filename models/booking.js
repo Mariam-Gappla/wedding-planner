@@ -12,7 +12,6 @@ const bookingSchema = new mongoose.Schema({
     ref: "Package",
     required: true,
   },
-  payment_id: { type: mongoose.Schema.Types.ObjectId, ref: "Payment" },
   date: Date,
   status: {
     type: String,
