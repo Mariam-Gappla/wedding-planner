@@ -6,17 +6,23 @@ const bookingSchema = new mongoose.Schema({
     ref: "User",
     required: true,
   },
-  vendor_id: { type: mongoose.Schema.Types.ObjectId, ref: "Vendor" },
   package_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Package",
     required: true,
   },
-  date: Date,
+  date: {
+    type: Date,
+    default: Date.now,  // Ensure date is set to the current date by default
+  },
   status: {
     type: String,
     enum: ["pending", "confirmed", "cancelled"],
     default: "pending",
+  },
+  payment_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Payment",  // Reference to the payment (if applicable)
   },
 });
 
