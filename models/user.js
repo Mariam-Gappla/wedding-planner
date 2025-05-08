@@ -15,12 +15,10 @@ const userSchema=new mongoose.Schema({
         type:"string",
         required:true,
     },
-    /*
-    bussiness_type:{
+    address:{
         type:"string",
-        enum:[""]
+        required:true,
     },
-    */
    role:{
     type:"string",
     required:true,
