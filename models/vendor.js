@@ -7,7 +7,6 @@ const vendorSchema = new mongoose.Schema({
     businessType: { type: String, enum: ['photographer', 'seller', 'hall_owner', 'dress_designer'] },
     user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     phone: String,
-    website: String,
     socialLinks: [String],
     verified: { type: Boolean, default: false }
   });
