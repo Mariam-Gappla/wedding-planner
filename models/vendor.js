@@ -6,7 +6,6 @@ const vendorSchema = new mongoose.Schema({
     address: String,
     businessType: { type: [String]},
     phone: String,
-    website: String,
     socialLinks: [String],
     verified: { type: Boolean, default: false }
   });
