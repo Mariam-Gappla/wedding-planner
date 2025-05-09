@@ -10,7 +10,7 @@ const registerSchema=joi.object({
         "string.pattern.base":"email should be in the format example@gamil.com",
         
     }),
-    password:joi.string().min(3).max(6).pattern(/^(?=[^0-9]*[0-9][^0-9]*$)[a-zA-Z0-9]{2,}$/).required().messages({
+    password:joi.string().min(3).max(9).pattern(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{3,9}$/).required().messages({
          'string.empty':"password required",
         "string.pattern.base":"password should contain at least one number and one letter",
          "string.min":"username should be at least 3 characters and at most 6 characters",
@@ -26,7 +26,7 @@ const forgetPasswordSchema=joi.object({
         "string.pattern.base":"email should be in the format example@gamil.com",
         
     }),
-    password:joi.string().min(3).max(6).pattern(/^(?=[^0-9]*[0-9][^0-9]*$)[a-zA-Z0-9]{2,}$/).required().messages({
+    password:joi.string().min(3).max(9).pattern(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{3,9}$/).required().messages({
          'string.empty':"password required",
         "string.pattern.base":"password should contain at least one number and one letter",
          "string.min":"username should be at least 3 characters and at most 6 characters",

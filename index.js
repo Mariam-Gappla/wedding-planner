@@ -2,20 +2,24 @@ const express = require('express');
 const app = express();
 const cors = require('cors');
 const connectDB = require('./config/DB');
-const userRoutes = require('./routes/user');
+const userRoutes = require('./routes/user.routes');
 const vendorRoutes=require('./routes/vendor.routes');
 const serviceRoutes=require('./routes/services.routes');
 const packageRouter=require("./routes/package.routes")
+const orderRouter=require("./routes/order.routes")
+const reviewRouter=require("./routes/review.routes")
 
 // Middleware
 app.use(cors());
 app.use(express.json()); // For parsing JSON request bodies
 
 // Routes
-app.use('/user', userRoutes);
-app.use('/vendor',vendorRoutes);
-app.use('/service',serviceRoutes);
-app.use("/package",packageRouter);
+app.use('/users', userRoutes);
+app.use('/vendors',vendorRoutes);
+app.use('/services',serviceRoutes);
+app.use("/packages",packageRouter);
+app.use("/orders",orderRouter);
+app.use("/orders",reviewRouter);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
