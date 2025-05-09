@@ -3,13 +3,13 @@ const mongoose=require('mongoose');
 const orderSchema = new mongoose.Schema({
     status: { type: String, enum: ['pending', 'confirmed', 'cancelled', 'delivered'], default: 'pending' },
     date: { type: Date, default: Date.now },
-    user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    vendor_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Vendor' },
-    package_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Package' },
     quantity: Number,
     total_price: Number,
-    payment_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Payment' },
-    shipping_info: String
+    shipping_info: String,
+    userId:{type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    vendorId:{type: mongoose.Schema.Types.ObjectId, ref: 'Vendor' },
+    serviceId:{type: mongoose.Schema.Types.ObjectId, ref: 'Service' }
   });
 
-module.exports = mongoose.model("Order", orderSchema);
+const Order=mongoose.model("Order",orderSchema);
+module.exports=Order;

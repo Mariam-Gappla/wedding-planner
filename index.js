@@ -3,6 +3,9 @@ const app = express();
 const cors = require('cors');
 const connectDB = require('./config/DB');
 const userRoutes = require('./routes/user');
+const vendorRoutes=require('./routes/vendor.routes');
+const serviceRoutes=require('./routes/services.routes');
+const packageRouter=require("./routes/package.routes")
 
 // Middleware
 app.use(cors());
@@ -10,6 +13,9 @@ app.use(express.json()); // For parsing JSON request bodies
 
 // Routes
 app.use('/user', userRoutes);
+app.use('/vendor',vendorRoutes);
+app.use('/service',serviceRoutes);
+app.use("/package",packageRouter);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

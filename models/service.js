@@ -1,12 +1,12 @@
-const mongoose=require('mongoose');
+const mongoose = require('mongoose');
 
 const serviceSchema = new mongoose.Schema({
-    title: String,
-    desc: String,
-    img: String,
-    category: String,
-    vendor_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Vendor' },
-    createdAt: { type: Date, default: Date.now }
-  });
+  title: String,
+  description: String,
+  img: String,
+  category: String,
+  createdAt: { type: Date, default: Date.now },
+});
 
-module.exports = mongoose.model("Service", serviceSchema);
+const Service = mongoose.model("Service", serviceSchema);
+module.exports = Service;

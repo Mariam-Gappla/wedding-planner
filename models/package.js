@@ -7,8 +7,8 @@ const packageSchema = new mongoose.Schema({
     description: String,
     img: String,
     features: [String],
-    service_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Service' },
-    vendor_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Vendor' }
+    serviceId:{type: mongoose.Schema.Types.ObjectId, ref: 'Service' },
   });
 
-module.exports = mongoose.model("Package", packageSchema);
+const Package=mongoose.model("Package",packageSchema);
+  module.exports=Package;
