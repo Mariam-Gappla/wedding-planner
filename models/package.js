@@ -8,6 +8,8 @@ const packageSchema = new mongoose.Schema({
     img: String,
     features: [String],
     serviceId:{type: mongoose.Schema.Types.ObjectId, ref: 'Service' },
+    vendorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vendor' }
+
   });
 
 const Package=mongoose.model("Package",packageSchema);

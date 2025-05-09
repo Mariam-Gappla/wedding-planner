@@ -7,7 +7,7 @@ const paymentSchema = new mongoose.Schema({
     paymentDate: { type: Date, default: Date.now },
     userId:{type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     orderId:{type: mongoose.Schema.Types.ObjectId, ref: 'Order' },
-    vendorId:{type: mongoose.Schema.Types.ObjectId, ref: 'Vendor' },
+    // vendorId:{type: mongoose.Schema.Types.ObjectId, ref: 'Vendor' },
   });
   
   const Payment=mongoose.model("Payment",paymentSchema);

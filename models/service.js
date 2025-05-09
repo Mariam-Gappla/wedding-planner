@@ -4,7 +4,6 @@ const serviceSchema = new mongoose.Schema({
   title: String,
   description: String,
   img: String,
-  category: String,
   createdAt: { type: Date, default: Date.now },
 });
 
