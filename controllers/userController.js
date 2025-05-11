@@ -16,7 +16,7 @@ const register = async (req, res, next) => {
         if (existuser) {
             return res.status(400).send({
                 status: res.statusCode,
-                message: "user already exist"
+                message: "this email already exist"
             })
         }
         const hashedpassword = await bcrypt.hash(password, 10);
@@ -26,30 +26,24 @@ const register = async (req, res, next) => {
             password: hashedpassword,
             role
         });
-        const token = jwt.sign({ id: user._id }, "my-secret")
-        const userdata = {
-            ...user._doc,
-            token: token
-        }
-        res.status(200).send({
-            status: res.statusCode,
-            message: "user registered successfully",
-            data: userdata
-        })
+         res.status(200).send({
+            message:"user register sucessfully",
+            data:user
+         })
+
     }
     catch (err) {
-        next(err);
+        next(err)
     }
 
+
 }
+
 const login = async (req, res, next) => {
     try {
-        console.log(req.headers)
-        const token = req.headers.authorization.split(" ")[1];
-        const payload = jwt.verify(token, 'my-secret');
+
         const { email, password } = req.body;
-        const user = await User.findOne({ '_id': payload.id });
-        console.log("user:${user}")
+        const user = await User.findOne({email:email});
         if (!user) {
             return res.status(401).send({
                 status: res.statusCode,
@@ -63,10 +57,11 @@ const login = async (req, res, next) => {
                 message: "invalid credentials"
             });
         }
+        const token=jwt.sign({id:user._id,role:user.role},"mysecret");
         res.status(200).send({
             status: res.statusCode,
             message: "user logged in successfully",
-            data: user
+            data: {...user._doc,token:token}
         })
     }
     catch (err) {
@@ -93,29 +88,28 @@ const getAllUsers = async (req, res, next) => {
 }
 const getUserById = async (req, res, next) => {
     try {
-        const id=req.params.id;
-        const {error}=forgetPasswordSchema.validate(req.body);
-        if(error)
-        {
+        const id = req.params.id;
+        const { error } = forgetPasswordSchema.validate(req.body);
+        if (error) {
             return res.status(401).send({
-                status:res.status,
-                message:error.details[0].message
+                status: res.status,
+                message: error.details[0].message
             })
         }
         const { email, password } = req.body;
         const hashedpassword = await bcrypt.hash(password, 10);
         const userfind = await User.findOneAndUpdate(
             { _id: id },
-            { password: hashedpassword},
+            { password: hashedpassword },
             { new: true });
         return res.status(200).send({
             status: res.status,
             message: "password reset successfuly",
-            data:userfind
+            data: userfind
         })
     }
     catch (err) {
         next(err)
     }
 }
-module.exports = { register, login, getAllUsers,getUserById }
+module.exports = { register, login, getAllUsers, getUserById }

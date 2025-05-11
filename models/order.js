@@ -7,8 +7,6 @@ const orderSchema = new mongoose.Schema({
     total_price: Number,
     shipping_info: String,
     userId:{type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    // vendorId:{type: mongoose.Schema.Types.ObjectId, ref: 'Vendor' },
-    // serviceId:{type: mongoose.Schema.Types.ObjectId, ref: 'Service' }
     packageId: { type: mongoose.Schema.Types.ObjectId, ref: 'Package' },
     paymentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Payment' },
   });

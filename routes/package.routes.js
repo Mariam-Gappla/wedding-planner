@@ -1,19 +1,33 @@
 const express = require("express");
 const Package = require("../models/package");
+const Service=require("../models/service")
 const router = express.Router();
 const upload = require("../config/uploadimage");
+const User=require("../models/user")
 
 // Add Package
-router.post("/", upload.single("image"), async (req, res, next) => {
-    const { title, price, description, features, serviceId } = req.body;
-    try {
+router.post("/add", upload.single("image"), async (req, res, next) => {
+    const { title, price} = req.body;
+    const role=req.user.role;
+    const VendorId=req.user.id;
+    console.log(VendorId);
+    const service = await Service.findOne({ vendorId :VendorId });
+    console.log(service)
+    if (!service) {
+    return res.status(404).send({
+        status: 404,
+        message: "No service found for this vendor"
+    });
+}
+
+    if(role=="Vendor")
+    {
+        try {
         const newPackage = await Package.create({
             title: title,
             price: price,
-            description: description,
-            img: req.file.originalname,
-            features: features,
-            serviceId: serviceId,
+            serviceId: service._id,
+            vendorId:VendorId
         });
         res.status(200).send({
             status: res.status,
@@ -22,6 +36,14 @@ router.post("/", upload.single("image"), async (req, res, next) => {
         });
     } catch (err) {
         next(err);
+    }
+    }
+    else
+    {
+        res.status(400).send({
+            status:res.status,
+            message:"not allow foe you"
+        })
     }
 });
 

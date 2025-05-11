@@ -3,23 +3,47 @@ const app = express();
 const cors = require('cors');
 const connectDB = require('./config/DB');
 const userRoutes = require('./routes/user.routes');
-const vendorRoutes=require('./routes/vendor.routes');
-const serviceRoutes=require('./routes/services.routes');
-const packageRouter=require("./routes/package.routes")
-const orderRouter=require("./routes/order.routes")
-const reviewRouter=require("./routes/review.routes")
-
+const serviceRoutes = require('./routes/services.routes');
+const packageRouter = require("./routes/package.routes")
+const orderRouter = require("./routes/order.routes")
+const reviewRouter = require("./routes/review.routes");
+const jwt=require("jsonwebtoken");
 // Middleware
 app.use(cors());
 app.use(express.json()); // For parsing JSON request bodies
+//for authentecation token
+const authenticateToken = (req, res, next) => {
+    if (req.originalUrl.includes('register') || req.originalUrl.includes('login')) {
+        console.log('Public route, skipping token check.');
+        next();
+    }
+    else {
+        const token = req.header('Authorization')?.replace('Bearer ', '');
+        console.log("Token outside if:", token);
+
+        if (!token) {
+            return res.status(401).send({ message: 'No token provided' });
+        }
+
+        try {
+            const decoded = jwt.verify(token, "mysecret");
+            req.user = decoded;
+            next();
+        } catch (err) {
+            return res.status(403).send({ message: 'Invalid token' });
+        }
+    }
+};
+app.use(authenticateToken);
+
+
 
 // Routes
 app.use('/users', userRoutes);
-app.use('/vendors',vendorRoutes);
-app.use('/services',serviceRoutes);
-app.use("/packages",packageRouter);
-app.use("/orders",orderRouter);
-app.use("/orders",reviewRouter);
+app.use('/services', serviceRoutes);
+app.use("/packages", packageRouter);
+app.use("/orders", orderRouter);
+app.use("/orders", reviewRouter);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

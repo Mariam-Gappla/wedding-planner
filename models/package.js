@@ -4,25 +4,9 @@ const packageSchema = new mongoose.Schema({
   title: {
     type: String,
     required: true,
-    minlength: [3, 'Title must be at least 3 characters long'],
   },
-  price: {
-    type: Number,
-    required: true,
-    min: [0, 'Price cannot be less than 0'],
-  },
-  description: {
-    type: String,
-    required: true,
-    minlength: [10, 'Description must be at least 10 characters long'],
-  },
-  img: {
-    type: String, 
-  },
-  features: [{
-    type: String,
-    required: true,
-  }],
+  price:{type: String,
+    required: true,},
   serviceId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Service',
@@ -30,7 +14,7 @@ const packageSchema = new mongoose.Schema({
   },
   vendorId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Vendor', 
+    ref: 'User', 
     required: true,
   },
 }, { timestamps: true });
