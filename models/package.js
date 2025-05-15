@@ -17,6 +17,10 @@ const packageSchema = new mongoose.Schema({
     ref: 'User', 
     required: true,
   },
+   orders: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Order',
+  }]
 }, { timestamps: true });
 
 const Package = mongoose.model('Package', packageSchema);

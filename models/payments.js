@@ -4,6 +4,7 @@ const paymentSchema = new mongoose.Schema({
     currency: { type: String, required: true },
     paymentMethod: { type: String, required: true },
     paymentStatus: { type: String, enum: ['Pending', 'Completed', 'Failed'], default: 'Pending' },
+    mount:{ type: String, required: true },
     paymentDate: { type: Date, default: Date.now },
     userId:{type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     orderId:{type: mongoose.Schema.Types.ObjectId, ref: 'Order' },

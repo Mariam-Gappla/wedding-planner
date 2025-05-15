@@ -2,9 +2,11 @@ const express = require('express');
 const router = express.Router()
 const Service = require('../models/service');
 const upload = require('../config/uploadimage');
+const Order = require("../models/order")
 const path = require('path');
 const fs = require('fs');
 router.use(express.static("images"));
+const { serviceSchema } = require('../validition/servicevalidation');
 //add service
 router.post('/add', upload.fields([
     { name: "image", maxCount: 1 }, // رفع صورة واحدة
@@ -13,20 +15,37 @@ router.post('/add', upload.fields([
     const role = req.user.role;
     if (role == "Vendor") {
         try {
-            const { title, category, exprience, serviceDetails, address, phone, facebookLink, instgrameLink } = req.body;
+            const dataToValidate = {
+                ...req.body,
+                profileImage: req.files?.image?.[0]?.originalname || null,
+                serviceImage: req.files?.serviceimages?.map(f => f.originalname) || []
+            };
+            const { error } = serviceSchema.validate(dataToValidate);
+            if (error) {
+                return res.status(400).send({
+                    status: res.statusCode,
+                    message: error.details[0].message
+                })
+            }
+            const { title, category, exprience, serviceDetails, address, phone, facebookLink, instgrameLink, likes } = req.body;
+            console.log(req.files['image'][0])
             const service = await Service.create({
                 title: title,
-                category: category,
+                category: category, // إزالة المسافات من البداية والنهاية ثم إزالة كل المسافات داخل النص
                 exprience: exprience,
-                profileImage: req.files['image'][0].originalname,
-                serviceImage: req.files['serviceimages'] ? req.files['serviceimages'].map(file => file.originalname) : [],
+                profileImage: "images/" + (req.files['image'][0].filename ? req.files['image'][0].filename : ""),
+                serviceImage: req.files['serviceimages'] ? req.files['serviceimages'].map(file => "images/" + file.filename) : [],
                 serviceDetails: serviceDetails,
                 address: address,
                 phone: phone,
                 facebookLink: facebookLink,
                 instgrameLink: instgrameLink,
-                vendorId:req.user.id
+                likes: likes,
+                vendorId: req.user.id
             });
+
+            console.log(typeof service.category)
+
             res.status(200).send({
                 status: res.status,
                 data: service
@@ -59,7 +78,7 @@ router.patch("/:id", upload.fields([
     const role = req.user.role;
     if (role == "Vendor") {
         try {
-            const { title, category, exprience, serviceDetails, address, phone, facebookLink, instgrameLink } = req.body;
+            const { title, category, exprience, serviceDetails, address, phone, facebookLink, instgrameLink, likes } = req.body;
             const serviceId = req.params.id;
             const findservice = await Service.findById(serviceId)
             console.log(req.file)
@@ -78,7 +97,8 @@ router.patch("/:id", upload.fields([
                 phone: phone || findservice.phone,
                 facebookLink: facebookLink || findservice.facebookLink,
                 instgrameLink: instgrameLink || findservice.instgrameLink,
-                vendorId:req.user._id
+                likes: likes || findservice.likes,
+                vendorId: req.user._id
 
             }, { new: true })
             console.log(service)
@@ -109,18 +129,17 @@ router.delete("/:id", (req, res, next) => {
     const id = req.params.id;
     if (role == "Vendor") {
         try {
-              const findservice=Service.findByIdAndDelete({"_id":id});
-              if(!findservice)
-              {
+            const findservice = Service.findByIdAndDelete({ "_id": id });
+            if (!findservice) {
                 return res.status(400).send({
-                    status:res.status,
-                    message:"not allow for you"
+                    status: res.status,
+                    message: "not allow for you"
                 });
-              }
-              res.status(200).send({
-                status:res.status,
-                message:"service deleted sucessfully"
-              })
+            }
+            res.status(200).send({
+                status: res.status,
+                message: "service deleted sucessfully"
+            })
         }
         catch (err) {
             next(err)
@@ -133,6 +152,95 @@ router.delete("/:id", (req, res, next) => {
             message: "not allow for you"
         })
     }
-})
+});
+router.get("/", async (req, res, next) => {
+    try {
+        const category = req.query.category;
+        if (category) {
+            const servicesWithPackagesAndOrders = await Service.find({ category: category })
+                .populate({
+                    path: 'packages', // populate الحقل "packages" في الـ Service
+                });
+            if (!servicesWithPackagesAndOrders) {
+                return res.status(200).send({
+                    status: res.status,
+                    message: "services empty"
+                })
+            }
+            res.status(200).send({
+                status: res.status,
+                data: servicesWithPackagesAndOrders
+            })
+        }
+        else {
+            const servicesWithPackagesAndOrders = await Service.find({})
+                .populate({
+                    path: 'packages',
+                });
+            if (!servicesWithPackagesAndOrders) {
+                return res.status(200).send({
+                    status: res.status,
+                    message: "services empty"
+                })
+            }
+            res.status(200).send({
+                status: res.status,
+                data: servicesWithPackagesAndOrders
+            })
+        }
+
+    }
+    catch (err) {
+
+    }
+});
+//get service by category
+router.get("/", async (req, res, next) => {
+    try {
+        const category = req.query.category;
+        console.log(category)
+        const servicesWithPackagesAndOrders = await Service.find({ category: category })
+            .populate({
+                path: 'packages', // populate الحقل "packages" في الـ Service
+            });
+        if (!servicesWithPackagesAndOrders) {
+            return res.status(200).send({
+                status: res.status,
+                message: "this category doesnot exist"
+            })
+        }
+        res.status(200).send({
+            status: res.status,
+            data: servicesWithPackagesAndOrders
+        })
+    }
+    catch (err) {
+        next(err);
+    }
+});
+//getservicebyid
+router.get("/:id", async (req, res, next) => {
+    try {
+        const id = req.params.id;
+        const servicesWithPackagesAndOrders = await Service.find({_id:id})
+            .populate({
+                path: 'packages', // populate الحقل "packages" في الـ Service
+            });
+        if (!servicesWithPackagesAndOrders) {
+            return res.status(200).send({
+                status: res.status,
+                message: "this category doesnot exist"
+            })
+        }
+        res.status(200).send({
+            status: res.status,
+            data: servicesWithPackagesAndOrders
+        })
+    }
+    catch (err) {
+        next(err);
+    }
+});
+
 
 module.exports = router;

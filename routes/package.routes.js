@@ -1,49 +1,60 @@
 const express = require("express");
 const Package = require("../models/package");
-const Service=require("../models/service")
+const Service = require("../models/service");
 const router = express.Router();
 const upload = require("../config/uploadimage");
-const User=require("../models/user")
+const User = require("../models/user");
+const { packagevalidation } = require("../validition/packagevalidation");
 
 // Add Package
-router.post("/add", upload.single("image"), async (req, res, next) => {
-    const { title, price} = req.body;
-    const role=req.user.role;
-    const VendorId=req.user.id;
-    console.log(VendorId);
-    const service = await Service.findOne({ vendorId :VendorId });
-    console.log(service)
-    if (!service) {
-    return res.status(404).send({
-        status: 404,
-        message: "No service found for this vendor"
-    });
-}
-
-    if(role=="Vendor")
-    {
-        try {
-        const newPackage = await Package.create({
-            title: title,
-            price: price,
-            serviceId: service._id,
-            vendorId:VendorId
-        });
-        res.status(200).send({
-            status: res.status,
-            message: "Package added successfully",
-            data: newPackage
-        });
-    } catch (err) {
-        next(err);
-    }
-    }
-    else
-    {
-        res.status(400).send({
-            status:res.status,
-            message:"not allow foe you"
+router.post("/add/:id", async (req, res, next) => {
+    // التحقق من البيانات باستخدام Joi أولاً
+    // استرجاع المعاملات
+    const serviceid = req.params.id;
+    const role = req.user.role;
+    const VendorId = req.user.id;
+    const { error } = packagevalidation.validate(req.body);
+    if (error) {
+         console.log(error.details[0].message);
+        return res.status(400).send({
+            message:error.details
         })
+    }
+
+    
+
+    // العثور على الخدمة باستخدام Mongoose
+    const service = await Service.find({ vendorId: VendorId, _id: serviceid });
+    if (!service) {
+        return res.status(404).send({
+            status: 404,
+            message: "No service found for this vendor"
+        });
+    }
+
+    // إذا كان الدور هو "Vendor"
+    if (role === "Vendor") {
+        try {
+            // إضافة الحزمة الجديدة إلى قاعدة البيانات
+            const newPackage = await Package.create({
+                title: req.body.title,
+                price: req.body.price,
+                serviceId: serviceid,
+                vendorId: VendorId
+            });
+            res.status(200).send({
+                status: res.status,
+                message: "Package added successfully",
+                data: newPackage
+            });
+        } catch (err) {
+            next(err);  // التعامل مع أي خطأ يحدث أثناء إضافة الحزمة إلى قاعدة البيانات
+        }
+    } else {
+        res.status(400).send({
+            status: res.status,
+            message: "Not allowed for you"
+        });
     }
 });
 

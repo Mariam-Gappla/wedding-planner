@@ -11,9 +11,10 @@ const jwt=require("jsonwebtoken");
 // Middleware
 app.use(cors());
 app.use(express.json()); // For parsing JSON request bodies
+app.use('/images', express.static('images'));
 //for authentecation token
 const authenticateToken = (req, res, next) => {
-    if (req.originalUrl.includes('register') || req.originalUrl.includes('login')) {
+    if (req.originalUrl.includes('register') || req.originalUrl.includes('login') || req.originalUrl.includes('images')) {
         console.log('Public route, skipping token check.');
         next();
     }
