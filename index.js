@@ -10,7 +10,9 @@ const reviewRouter = require("./routes/review.routes");
 const jwt=require("jsonwebtoken");
 // Middleware
 app.use(cors());
-app.use(express.json()); // For parsing JSON request bodies
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+ // For parsing JSON request bodies
 app.use('/images', express.static('images'));
 //for authentecation token
 const authenticateToken = (req, res, next) => {

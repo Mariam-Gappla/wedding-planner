@@ -17,7 +17,7 @@ const serviceSchema = Joi.object({
     'string.empty': "exprience is required",
     'any.required': "exprience is required",
   }),
-  address:Joi.string().required().messages({
+  address:Joi.string().messages({
     'string.base': "address must be a string",
     'string.empty': "address is required",
      'any.required': "address is required",
@@ -29,9 +29,10 @@ const serviceSchema = Joi.object({
   }),
   serviceImage: Joi.array()
   .items(Joi.string().messages({
-    'string.base': 'Each item in serviceImage must be a string',
-    'string.empty': 'Each image in serviceImage is required'
-  }))
+    'string.base': 'Each item in workImages must be a string',
+    'any.required': "workImages is required",
+    'string.empty': "workImages is required",
+    }))
   .min(1)
   .required()
   .messages({

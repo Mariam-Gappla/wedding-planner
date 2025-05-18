@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router()
 const Service = require('../models/service');
+const User=require('../models/user');
 const upload = require('../config/uploadimage');
 const Order = require("../models/order")
 const path = require('path');
@@ -8,67 +9,81 @@ const fs = require('fs');
 router.use(express.static("images"));
 const { serviceSchema } = require('../validition/servicevalidation');
 //add service
+
 router.post('/add', upload.fields([
-    { name: "image", maxCount: 1 }, // رفع صورة واحدة
-    { name: "serviceimages", maxCount: 10 }, // رفع فيديو واحد
+    { name: "image", maxCount: 1 },
+    { name: "serviceimages", maxCount: 10 },
 ]), async (req, res, next) => {
     const role = req.user.role;
-    if (role == "Vendor") {
-        try {
-            const dataToValidate = {
-                ...req.body,
-                profileImage: req.files?.image?.[0]?.originalname || null,
-                serviceImage: req.files?.serviceimages?.map(f => f.originalname) || []
-            };
-            const { error } = serviceSchema.validate(dataToValidate);
-            if (error) {
-                return res.status(400).send({
-                    status: res.statusCode,
-                    message: error.details[0].message
-                })
-            }
-            const { title, category, exprience, serviceDetails, address, phone, facebookLink, instgrameLink, likes } = req.body;
-            console.log(req.files['image'][0])
-            const service = await Service.create({
-                title: title,
-                category: category, // إزالة المسافات من البداية والنهاية ثم إزالة كل المسافات داخل النص
-                exprience: exprience,
-                profileImage: "images/" + (req.files['image'][0].filename ? req.files['image'][0].filename : ""),
-                serviceImage: req.files['serviceimages'] ? req.files['serviceimages'].map(file => "images/" + file.filename) : [],
-                serviceDetails: serviceDetails,
-                address: address,
-                phone: phone,
-                facebookLink: facebookLink,
-                instgrameLink: instgrameLink,
-                likes: likes,
-                vendorId: req.user.id
+    if (role !== "Vendor") {
+        return res.status(400).send({
+            status: res.statusCode,
+            message: "not allowed for you"
+        });
+    }
+
+    try {
+        const dataToValidate = {
+            ...req.body,
+            profileImage: req.files?.image?.[0]?.originalname,
+            serviceImage: req.files?.serviceimages?.map(f => f.originalname)
+        };
+
+        const { error } = serviceSchema.validate(dataToValidate);
+        if (error) {
+            console.log('Validation Error:', error.details);
+            return res.status(400).send({
+                status: res.statusCode,
+                message: error.details[0].message
             });
-
-            console.log(typeof service.category)
-
-            res.status(200).send({
-                status: res.status,
-                data: service
-            })
-
-        }
-        catch (err) {
-            if (req.file) {
-                const filePath = path.join(__dirname, '..', 'images', req.file.filename);
-                fs.unlink(filePath, (unlinkErr) => { });
-            }
-            next(err)
         }
 
-    }
-    else {
-        res.status(400).send({
-            status: res.status,
-            message: "not allow for you"
-        })
-    }
+        // ✅ validation passed → نحفظ الصور يدويًا
+        const saveImage = (fileBuffer, filename) => {
+            const fullPath = path.join(__dirname, '..', 'images', filename);
+            fs.writeFileSync(fullPath, fileBuffer);
+            return "images/" + filename;
+        };
 
+        const profileImageFile = req.files?.image?.[0];
+        const serviceImageFiles = req.files?.serviceimages || [];
+
+        const profileImagePath = profileImageFile
+            ? saveImage(profileImageFile.buffer, Date.now() + '-' + profileImageFile.originalname)
+            : "";
+
+        const serviceImagePaths = serviceImageFiles.map(file =>
+            saveImage(file.buffer, Date.now() + '-' + file.originalname)
+        );
+
+        const { title, category, exprience, serviceDetails, address, phone, facebookLink, instgrameLink, likes } = req.body;
+
+        const service = await Service.create({
+            title,
+            category,
+            exprience,
+            profileImage: profileImagePath,
+            serviceImage: serviceImagePaths,
+            serviceDetails,
+            Address:address,
+            phone,
+            facebookLink,
+            instgrameLink,
+            likes,
+            vendorId: req.user.id
+        });
+
+        res.status(200).send({
+            status: res.statusCode,
+            data: service
+        });
+
+    } catch (err) {
+        console.error("Unexpected error:", err);
+        next(err);
+    }
 });
+
 //update service
 router.patch("/:id", upload.fields([
     { name: "image", maxCount: 1 }, // رفع صورة واحدة
@@ -123,18 +138,18 @@ router.patch("/:id", upload.fields([
     }
 });
 //delete service
-router.delete("/:id", (req, res, next) => {
+router.delete("/:id", async (req, res, next) => {
     const role = req.user.role;
     console.log(role)
     const id = req.params.id;
     if (role == "Vendor") {
         try {
-            const findservice = Service.findByIdAndDelete({ "_id": id });
+            const findservice = await Service.findByIdAndDelete({ "_id": id });
             if (!findservice) {
-                return res.status(400).send({
+                return res.status(200).send({
                     status: res.status,
-                    message: "not allow for you"
-                });
+                    message: "this service not found"
+                })
             }
             res.status(200).send({
                 status: res.status,
@@ -153,45 +168,33 @@ router.delete("/:id", (req, res, next) => {
         })
     }
 });
-router.get("/", async (req, res, next) => {
+//get service by vendorid
+router.get("/:id", async (req, res, next) => {
     try {
-        const category = req.query.category;
-        if (category) {
-            const servicesWithPackagesAndOrders = await Service.find({ category: category })
-                .populate({
-                    path: 'packages', // populate الحقل "packages" في الـ Service
-                });
-            if (!servicesWithPackagesAndOrders) {
-                return res.status(200).send({
-                    status: res.status,
-                    message: "services empty"
-                })
-            }
-            res.status(200).send({
+        const id = req.params.id;
+        const vendor= await User.findById({_id:id});
+        if(!vendor)
+        {
+            return res.status(200).send({
                 status: res.status,
-                data: servicesWithPackagesAndOrders
-            })
+                message: "this vendor does not exist"
+            }) 
         }
-        else {
-            const servicesWithPackagesAndOrders = await Service.find({})
-                .populate({
-                    path: 'packages',
-                });
-            if (!servicesWithPackagesAndOrders) {
-                return res.status(200).send({
-                    status: res.status,
-                    message: "services empty"
-                })
-            }
-            res.status(200).send({
+        const vendorservices = await Service.find({ vendorId: id })
+        if (!vendorservices) {
+            return res.status(200).send({
                 status: res.status,
-                data: servicesWithPackagesAndOrders
+                message: "this vendor does not have any services"
             })
-        }
 
+        }
+         return res.status(200).send({
+                status: res.status,
+               data: vendorservices
+            })
     }
     catch (err) {
-
+        next(err);
     }
 });
 //get service by category
@@ -219,10 +222,10 @@ router.get("/", async (req, res, next) => {
     }
 });
 //getservicebyid
-router.get("/:id", async (req, res, next) => {
+router.get("/packages/:id", async (req, res, next) => {
     try {
         const id = req.params.id;
-        const servicesWithPackagesAndOrders = await Service.find({_id:id})
+        const servicesWithPackagesAndOrders = await Service.find({ _id: id })
             .populate({
                 path: 'packages', // populate الحقل "packages" في الـ Service
             });

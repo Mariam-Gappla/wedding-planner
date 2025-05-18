@@ -15,13 +15,13 @@ router.post("/add/:id", async (req, res, next) => {
     const VendorId = req.user.id;
     const { error } = packagevalidation.validate(req.body);
     if (error) {
-         console.log(error.details[0].message);
+        console.log(error.details[0].message);
         return res.status(400).send({
-            message:error.details
+            message: error.details
         })
     }
 
-    
+
 
     // العثور على الخدمة باستخدام Mongoose
     const service = await Service.find({ vendorId: VendorId, _id: serviceid });
@@ -35,17 +35,18 @@ router.post("/add/:id", async (req, res, next) => {
     // إذا كان الدور هو "Vendor"
     if (role === "Vendor") {
         try {
-            // إضافة الحزمة الجديدة إلى قاعدة البيانات
-            const newPackage = await Package.create({
-                title: req.body.title,
-                price: req.body.price,
-                serviceId: serviceid,
-                vendorId: VendorId
-            });
+            
+            for (const item of req.body) {
+                await Package.create({
+                    title: item.title,
+                    price: item.price,
+                    serviceId: serviceid,
+                    vendorId: VendorId
+                });
+            }
             res.status(200).send({
                 status: res.status,
                 message: "Package added successfully",
-                data: newPackage
             });
         } catch (err) {
             next(err);  // التعامل مع أي خطأ يحدث أثناء إضافة الحزمة إلى قاعدة البيانات
