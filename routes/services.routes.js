@@ -245,5 +245,22 @@ router.get("/packages/:id", async (req, res, next) => {
     }
 });
 
-
+router.get("/service/:id", async (req, res, next) => {
+    try {
+        const id = req.params.id;
+        const service = await Service.findById(id);
+        if (!service) {
+            return res.status(404).send({
+                status: 404,
+                message: "Service not found"
+            });
+        }
+        res.status(200).send({
+            status: 200,
+            data: service
+        });
+    } catch (err) {
+        next(err);
+    }
+});
 module.exports = router;
