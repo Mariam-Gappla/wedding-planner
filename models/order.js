@@ -5,12 +5,17 @@ const mongoose = require('mongoose');
 const orderSchema = new mongoose.Schema({
   status: { 
     type: String, 
-    enum: ['pending', 'confirmed', 'cancelled', 'delivered'], 
+    enum: ['pending', 'confirmed', 'refused'], 
     default: 'pending' 
   },
   date: { 
     type: Date, 
     default: Date.now 
+  },
+  method: {
+    type: String,
+    enum: ['visa', 'cash'], 
+    default: 'cash'         
   },
   total_price: Number,
   shipping_info: String,
