@@ -8,6 +8,7 @@ const packageRouter = require("./routes/package.routes")
 const orderRouter = require("./routes/order.routes")
 const reviewRouter = require("./routes/review.routes");
 const jwt=require("jsonwebtoken");
+const paymentRoutes = require("./routes/payment.routes");
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
@@ -47,7 +48,9 @@ app.use('/services', serviceRoutes);
 app.use("/packages", packageRouter);
 app.use("/orders", orderRouter);
 app.use("/reviews", reviewRouter);
-
+//payment routes
+app.use("/uploads", express.static("uploads"));
+app.use("/pay", paymentRoutes);
 // Error handling middleware
 app.use((err, req, res, next) => {
     res.status(400).send({
