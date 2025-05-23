@@ -1,6 +1,5 @@
 const Review = require('../models/reviews');
 const Order = require("../models/order");
-const Package = require("../models/package"); // to get serviceId & vendorId
 
 const createReview = async (req, res) => {
   const { content, rate, serviceId, userId, vendorId } = req.body;
@@ -37,9 +36,9 @@ const createReview = async (req, res) => {
     const validOrder = confirmedOrders.find(order => {
       const pkg = order.package;
       return pkg &&
-        pkg.serviceId &&
-        pkg.serviceId._id.toString() === serviceId &&
-        pkg.serviceId.vendorId.toString() === vendorId;
+         pkg.serviceId &&
+         pkg.serviceId._id.toString() === serviceId &&
+         pkg.serviceId.vendorId.toString() === vendorId;
     });
 
     if (!validOrder) {
@@ -47,6 +46,7 @@ const createReview = async (req, res) => {
         message: "You can only review vendors you've completed an order with.",
       });
     }
+    // console.log("Valid order found:", validOrder);
 
     // Step 2: Check if review already exists
     const existingReview = await Review.findOne({
@@ -78,6 +78,32 @@ const createReview = async (req, res) => {
   }
 };
 
+
+const getReviewsByVendorId = async (req, res) => {
+  const { vendorId } = req.params;
+
+  try {
+    if (!vendorId) {
+      return res.status(400).json({ message: "Vendor ID is required." });
+    }
+
+    const reviews = await Review.find({ vendorId })
+      .populate('userId', 'name') // Optional: Populate user name
+      .populate('serviceId', 'name'); // Optional: Populate service name
+
+    if (reviews.length === 0) {
+      return res.status(404).json({ message: "No reviews found for this vendor." });
+    }
+
+    res.status(200).json(reviews);
+  } catch (error) {
+    console.error("Error fetching reviews by vendor ID:", error);
+    res.status(500).json({ message: "Server error while fetching reviews." });
+  }
+};
+
+
 module.exports = {
-  createReview
+  createReview,
+  getReviewsByVendorId
 };
