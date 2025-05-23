@@ -11,7 +11,7 @@ const { serviceSchema } = require('../validition/servicevalidation');
 //get all services
 router.get("/all", async(req,res,next)=>{
     try{
-      console.log("allservices");
+console.log("allservices");
         const allservices= await Service.find({});
         if(!allservices){
             return res.status(200).send({
@@ -30,6 +30,7 @@ router.get("/all", async(req,res,next)=>{
     }
 })
 //add service
+
 router.post('/add', upload.fields([
     { name: "image", maxCount: 1 },
     { name: "serviceimages", maxCount: 10 },
@@ -46,8 +47,7 @@ router.post('/add', upload.fields([
         const dataToValidate = {
             ...req.body,
             profileImage: req.files?.image?.[0]?.originalname,
-            serviceImage: req.files?.serviceimages?.map(f => f.originalname),
-            status: req.body.status // ✅ أضفنا status هنا
+            serviceImage: req.files?.serviceimages?.map(f => f.originalname)
         };
 
         const { error } = serviceSchema.validate(dataToValidate);
@@ -59,6 +59,7 @@ router.post('/add', upload.fields([
             });
         }
 
+        // ✅ validation passed → نحفظ الصور يدويًا
         const saveImage = (fileBuffer, filename) => {
             const fullPath = path.join(__dirname, '..', 'images', filename);
             fs.writeFileSync(fullPath, fileBuffer);
@@ -76,10 +77,7 @@ router.post('/add', upload.fields([
             saveImage(file.buffer, Date.now() + '-' + file.originalname)
         );
 
-        const {
-            title, category, exprience, serviceDetails, address,
-            phone, facebookLink, instgrameLink, likes, status // ✅ أضفنا status هنا
-        } = req.body;
+        const { title, category, exprience, serviceDetails, address, phone, facebookLink, instgrameLink, likes } = req.body;
 
         const service = await Service.create({
             title,
@@ -107,6 +105,7 @@ router.post('/add', upload.fields([
         next(err);
     }
 });
+
 //update service
 router.patch("/:id", upload.fields([
     { name: "image", maxCount: 1 },
@@ -120,7 +119,7 @@ router.patch("/:id", upload.fields([
         const keepImages = req.body.existingImages ? JSON.parse(req.body.existingImages) : [];
         const imagesToDelete = findService.serviceImage.filter(img => !keepImages.includes(img));
         for (const img of imagesToDelete) {
-            const imageName = img.replace(/^images[\\/]/, '');
+            const imageName = img.replace(/^images[\\/]/, ''); // إزالة المجلد من البداية
             const filePath = path.join(__dirname, '..', 'images', imageName);
             fs.unlink(filePath, err => {
                 if (err) console.error(`Error deleting file ${img}:`, err);
@@ -163,8 +162,7 @@ router.patch("/:id", upload.fields([
             likes: req.body.likes || findService.likes,
             vendorId: req.user._id,
             profileImage: newProfileImage,
-            serviceImage: [...keepImages, ...newServiceImages],
-            status: req.body.status || findService.status // ✅ إضافة أو تحديث status
+            serviceImage: [...keepImages, ...newServiceImages],  // خزن الصور المحتفظ بها + الجديدة
         }, { new: true });
 
         res.status(200).json({
