@@ -7,14 +7,18 @@ const createOrder = async (req, res) => {
     const { bookingDate, name, paymentId, notes, packageId, userId, method } = req.body;
 
     if (!packageId || !name || !bookingDate || !userId || !method) {
-      return res.status(400).json({ message: "Missing required fields: bookingDate, name, packageId, userId, or method." });
+      return res.status(400).json({
+        message: "Missing required fields: bookingDate, name, packageId, userId, or method."
+      });
     }
 
-    const selectedPackage = await Order.findById(packageId);
+    // ✅ استخدم موديل Package بدلاً من Order هنا
+    const selectedPackage = await Package.findById(packageId);
     if (!selectedPackage) {
       return res.status(404).json({ message: "Package not found." });
     }
 
+    // إنشاء الطلب الجديد
     const newOrder = await Order.create({
       date: bookingDate,
       total_price: Number(selectedPackage.price),
@@ -26,6 +30,7 @@ const createOrder = async (req, res) => {
       paymentId: method === "cash" ? null : paymentId || null,
     });
 
+    // تحديث الحزمة بإضافة الـ order الجديد إلى مصفوفة الطلبات
     if (Array.isArray(selectedPackage.orders)) {
       selectedPackage.orders.push(newOrder._id);
       await selectedPackage.save();
@@ -39,9 +44,12 @@ const createOrder = async (req, res) => {
 
   } catch (error) {
     console.error("Error creating order:", error);
-    return res.status(500).json({ message: "Internal server error", error: error.message });
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message
+    });
   }
-}
+};
 
 // Get order by ID
 const getAllOrders = async (req, res) => {
