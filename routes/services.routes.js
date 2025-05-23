@@ -8,6 +8,27 @@ const path = require('path');
 const fs = require('fs');
 router.use(express.static("images"));
 const { serviceSchema } = require('../validition/servicevalidation');
+//get all services
+router.get("/all", async(req,res,next)=>{
+    try{
+console.log("allservices");
+        const allservices= await Service.find({});
+        if(!allservices){
+            return res.status(200).send({
+                status:res.status,
+                message:"there is no services"
+            })
+        }
+        res.status(200).send({
+            status:res.status,
+            data:allservices
+        })
+
+    }
+    catch(err){
+        next(err);
+    }
+})
 //add service
 
 router.post('/add', upload.fields([
@@ -70,6 +91,7 @@ router.post('/add', upload.fields([
             facebookLink,
             instgrameLink,
             likes,
+            status, // ✅ هنا بنخزن الحالة
             vendorId: req.user.id
         });
 
@@ -93,6 +115,7 @@ router.patch("/:id", upload.fields([
         const serviceId = req.params.id;
         const findService = await Service.findById(serviceId);
         if (!findService) return res.status(404).send({ message: "Service not found" });
+
         const keepImages = req.body.existingImages ? JSON.parse(req.body.existingImages) : [];
         const imagesToDelete = findService.serviceImage.filter(img => !keepImages.includes(img));
         for (const img of imagesToDelete) {
@@ -102,13 +125,16 @@ router.patch("/:id", upload.fields([
                 if (err) console.error(`Error deleting file ${img}:`, err);
             });
         }
+
         const saveImage = (fileBuffer, filename) => {
             const fullPath = path.join(__dirname, '..', 'images', filename);
             fs.writeFileSync(fullPath, fileBuffer);
             return 'images/' + filename;
         };
+
         const profileImageFile = req.files?.image?.[0];
         const serviceImageFiles = req.files?.serviceimages || [];
+
         let newProfileImage = findService.profileImage;
         if (profileImageFile) {
             if (findService.profileImage) {
@@ -119,9 +145,11 @@ router.patch("/:id", upload.fields([
             }
             newProfileImage = saveImage(profileImageFile.buffer, Date.now() + '-' + profileImageFile.originalname);
         }
+
         const newServiceImages = serviceImageFiles.map(file =>
             saveImage(file.buffer, Date.now() + '-' + file.originalname)
         );
+
         const updatedService = await Service.findByIdAndUpdate(serviceId, {
             title: req.body.title || findService.title,
             category: req.body.category || findService.category,
@@ -278,6 +306,7 @@ router.get("/packages/:id", async (req, res, next) => {
         next(err);
     }
 });
+
 
 
 
