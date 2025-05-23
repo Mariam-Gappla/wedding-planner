@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router()
 const Service = require('../models/service');
-const User=require('../models/user');
+const User = require('../models/user');
 const upload = require('../config/uploadimage');
 const Order = require("../models/order")
 const path = require('path');
@@ -65,7 +65,7 @@ router.post('/add', upload.fields([
             profileImage: profileImagePath,
             serviceImage: serviceImagePaths,
             serviceDetails,
-            Address:address,
+            Address: address,
             phone,
             facebookLink,
             instgrameLink,
@@ -86,55 +86,64 @@ router.post('/add', upload.fields([
 
 //update service
 router.patch("/:id", upload.fields([
-    { name: "image", maxCount: 1 }, // رفع صورة واحدة
-    { name: "serviceimages", maxCount: 10 }, // رفع فيديو واحد
+    { name: "image", maxCount: 1 },
+    { name: "serviceimages", maxCount: 10 },
 ]), async (req, res, next) => {
-
-    const role = req.user.role;
-    if (role == "Vendor") {
-        try {
-            const { title, category, exprience, serviceDetails, address, phone, facebookLink, instgrameLink, likes } = req.body;
-            const serviceId = req.params.id;
-            const findservice = await Service.findById(serviceId)
-            console.log(req.file)
-            if (!findservice) {
-                res.send("not found")
-            }
-            const service = await Service.findByIdAndUpdate(serviceId, {
-                title: title || findservice.title,
-                category: category || findservice.category,
-                exprience: exprience || findservice.exprience,
-                profileImage: req.files['image'][0].originalname || findservice.profileImage,
-                serviceImage: req.files['serviceimages'] ? req.files['serviceimages'].map(file => file.originalname) : [] ||
-                    findservice.serviceImage.map(file => file),
-                serviceDetails: serviceDetails || findservice.serviceDetails,
-                address: address || findservice.address,
-                phone: phone || findservice.phone,
-                facebookLink: facebookLink || findservice.facebookLink,
-                instgrameLink: instgrameLink || findservice.instgrameLink,
-                likes: likes || findservice.likes,
-                vendorId: req.user._id
-
-            }, { new: true })
-            console.log(service)
-            res.status(200).json({
-                message: "service updated sucessfully",
-                data: service
+    try {
+        const serviceId = req.params.id;
+        const findService = await Service.findById(serviceId);
+        if (!findService) return res.status(404).send({ message: "Service not found" });
+        const keepImages = req.body.existingImages ? JSON.parse(req.body.existingImages) : [];
+        const imagesToDelete = findService.serviceImage.filter(img => !keepImages.includes(img));
+        for (const img of imagesToDelete) {
+            const imageName = img.replace(/^images[\\/]/, ''); // إزالة المجلد من البداية
+            const filePath = path.join(__dirname, '..', 'images', imageName);
+            fs.unlink(filePath, err => {
+                if (err) console.error(`Error deleting file ${img}:`, err);
             });
-
-        } catch (err) {
-            if (req.file) {
-                const newImagePath = path.join(__dirname, '..', 'images', req.file.filename);
-                fs.unlink(newImagePath, () => { });
-            }
-            next(err);
         }
-    }
-    else {
-        res.status(400).send({
-            status: res.status,
-            message: "not allow for you"
-        })
+        const saveImage = (fileBuffer, filename) => {
+            const fullPath = path.join(__dirname, '..', 'images', filename);
+            fs.writeFileSync(fullPath, fileBuffer);
+            return 'images/' + filename;
+        };
+        const profileImageFile = req.files?.image?.[0];
+        const serviceImageFiles = req.files?.serviceimages || [];
+        let newProfileImage = findService.profileImage;
+        if (profileImageFile) {
+            if (findService.profileImage) {
+                const oldProfilePath = path.join(__dirname, '..', findService.profileImage);
+                fs.unlink(oldProfilePath, (err) => {
+                    if (err) console.error(`Error deleting old profile image:`, err);
+                });
+            }
+            newProfileImage = saveImage(profileImageFile.buffer, Date.now() + '-' + profileImageFile.originalname);
+        }
+        const newServiceImages = serviceImageFiles.map(file =>
+            saveImage(file.buffer, Date.now() + '-' + file.originalname)
+        );
+        const updatedService = await Service.findByIdAndUpdate(serviceId, {
+            title: req.body.title || findService.title,
+            category: req.body.category || findService.category,
+            exprience: req.body.exprience || findService.exprience,
+            serviceDetails: req.body.serviceDetails || findService.serviceDetails,
+            address: req.body.address || findService.Address,
+            phone: req.body.phone || findService.phone,
+            facebookLink: req.body.facebookLink || findService.facebookLink,
+            instgrameLink: req.body.instgrameLink || findService.instgrameLink,
+            likes: req.body.likes || findService.likes,
+            vendorId: req.user._id,
+            profileImage: newProfileImage,
+            serviceImage: [...keepImages, ...newServiceImages],  // خزن الصور المحتفظ بها + الجديدة
+        }, { new: true });
+
+        res.status(200).json({
+            message: "Service updated successfully",
+            data: updatedService
+        });
+
+    } catch (err) {
+        next(err);
     }
 });
 //delete service
@@ -144,7 +153,33 @@ router.delete("/:id", async (req, res, next) => {
     const id = req.params.id;
     if (role == "Vendor") {
         try {
-            const findservice = await Service.findByIdAndDelete({ "_id": id });
+            const findservice = await Service.findById(id);
+
+            if (!findservice) {
+                return res.status(404).send({
+                    message: "This service not found"
+                });
+            }
+
+            //  حذف صورة البروفايل من السيرفر
+            if (findservice.profileImage) {
+                const imageName = findservice.profileImage.replace(/^images[\\/]/, ''); 
+                const profileImagePath = path.join(__dirname, '..','images', imageName);
+                fs.unlink(profileImagePath, (err) => {
+                    if (err) console.error("Error deleting profile image:", err);
+                });
+            }
+            //  حذف كل صور الخدمة من السيرفر
+            for (const img of findservice.serviceImage) {
+                 const imageName = img.replace(/^images[\\/]/, ''); // إزالة المجلد من البداي
+                const imagePath = path.join(__dirname, '..', 'images', imageName);
+                fs.unlink(imagePath, (err) => {
+                    if (err) console.error(`Error deleting service image ${img}:`, err);
+                });
+            }
+            // 🧾 حذف الخدمة من قاعدة البيانات
+            await Service.findByIdAndDelete(id);
+           
             if (!findservice) {
                 return res.status(200).send({
                     status: res.status,
@@ -172,13 +207,12 @@ router.delete("/:id", async (req, res, next) => {
 router.get("/:id", async (req, res, next) => {
     try {
         const id = req.params.id;
-        const vendor= await User.findById({_id:id});
-        if(!vendor)
-        {
+        const vendor = await User.findById({ _id: id });
+        if (!vendor) {
             return res.status(200).send({
                 status: res.status,
                 message: "this vendor does not exist"
-            }) 
+            })
         }
         const vendorservices = await Service.find({ vendorId: id })
         if (!vendorservices) {
@@ -188,10 +222,10 @@ router.get("/:id", async (req, res, next) => {
             })
 
         }
-         return res.status(200).send({
-                status: res.status,
-               data: vendorservices
-            })
+        return res.status(200).send({
+            status: res.status,
+            data: vendorservices
+        })
     }
     catch (err) {
         next(err);
@@ -245,22 +279,7 @@ router.get("/packages/:id", async (req, res, next) => {
     }
 });
 
-router.get("/service/:id", async (req, res, next) => {
-    try {
-        const id = req.params.id;
-        const service = await Service.findById(id);
-        if (!service) {
-            return res.status(404).send({
-                status: 404,
-                message: "Service not found"
-            });
-        }
-        res.status(200).send({
-            status: 200,
-            data: service
-        });
-    } catch (err) {
-        next(err);
-    }
-});
+
+
+
 module.exports = router;
