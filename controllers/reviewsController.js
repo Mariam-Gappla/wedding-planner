@@ -92,7 +92,7 @@ const getReviewsByVendorId = async (req, res) => {
       .populate('serviceId', 'name'); // Optional: Populate service name
 
     if (reviews.length === 0) {
-      return res.status(404).json({ message: "No reviews found for this vendor." });
+      return res.status(200).json({ message: "No reviews found for this vendor." });
     }
 
     res.status(200).json(reviews);
