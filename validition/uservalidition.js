@@ -7,11 +7,11 @@ const registerSchema = joi.object({
         "string.min": "username should be at least 3 characters and at most 30 characters",
         "string.max": "username should be at least 3 characters and at most 30 characters"
     }),
-    email: joi.string().pattern(/^[a-zA-Z]+@[a-zA-Z]+\.[a-zA-Z]{2,3}$/).required().messages({
-        'string.empty': "email is required",
-        'any.required': "email is required",
-        "string.pattern.base": "email should be in the format example@gmail.com"
-    }),
+    email: joi.string().email({ tlds: { allow: false } }).required().messages({
+  'string.empty': "email is required",
+  'any.required': "email is required",
+  'string.email': "email should be in the format example@gmail.com"
+}),
     password: joi.string().min(3).max(9).pattern(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{3,9}$/).required().messages({
         'string.empty': "password is required",
         'any.required': "password is required",

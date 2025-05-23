@@ -46,7 +46,7 @@ app.use('/users', userRoutes);
 app.use('/services', serviceRoutes);
 app.use("/packages", packageRouter);
 app.use("/orders", orderRouter);
-app.use("/orders", reviewRouter);
+app.use("/reviews", reviewRouter);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
