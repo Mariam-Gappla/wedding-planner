@@ -14,7 +14,7 @@ const orderSchema = new mongoose.Schema({
   },
   method: {
     type: String,
-    enum: ['visa', 'cash'], 
+    enum: ['Visa', 'cash'], 
     default: 'cash'         
   },
   total_price: Number,
