@@ -12,6 +12,11 @@ const serviceSchema = new mongoose.Schema({
  facebookLink:{ type: String},
  instgrameLink:{ type: String},
  likes:{type:String},
+ status: {
+  type: String,
+  enum: ["Accepted", "Pending", "Refused"],
+  default: "Pending" 
+},
  vendorId: {
      type: mongoose.Schema.Types.ObjectId,
      ref: 'User', 

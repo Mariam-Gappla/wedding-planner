@@ -2,6 +2,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const { registerSchema, forgetPasswordSchema } = require('../validition/uservalidition');
+// register
 const register = async (req, res, next) => {
     try {
         const { error } = registerSchema.validate(req.body);
@@ -38,7 +39,7 @@ const register = async (req, res, next) => {
 
 
 }
-
+//login
 const login = async (req, res, next) => {
     try {
 
@@ -68,9 +69,10 @@ const login = async (req, res, next) => {
         next(err);
     }
 }
+//get all users
 const getAllUsers = async (req, res, next) => {
     try {
-        const users = await User.find({});
+        const users = await User.find();
         if (!users || users.length == 0) {
             return res.status(200).send({
                 status: res.statusCode,
@@ -86,6 +88,7 @@ const getAllUsers = async (req, res, next) => {
         next(err);
     }
 }
+//get user by id
 const getUserById = async (req, res, next) => {
     try {
         const id = req.params.id;
@@ -112,4 +115,48 @@ const getUserById = async (req, res, next) => {
         next(err)
     }
 }
-module.exports = { register, login, getAllUsers, getUserById }
+//get user by role
+const getUserByRole = async (req, res, next) => {
+    try {
+        const role = req.query.role;
+        console.log(role);
+        const users = await User.find({ role: role });
+        if (!users || users.length == 0) {
+            return res.status(200).send({
+                status: res.statusCode,
+                message: "no users found"
+            })
+        }
+        res.status(200).send({
+            status: res.statusCode,
+            data: users
+        })
+    }
+    catch (err) {
+        next(err);
+    }
+}
+//delete user
+const deleteUser = async (req, res, next) => {
+  try {
+    const userId = req.params.id;
+    const deletedUser = await User.findByIdAndDelete(userId);
+
+    if (!deletedUser) {
+      return res.status(404).send({
+        status: res.statusCode,
+        message: "User not found"
+      });
+    }
+
+    res.status(200).send({
+      status: res.statusCode,
+      message: "User deleted successfully",
+      data: deletedUser
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { register, login, getAllUsers, getUserById,getUserByRole,deleteUser };
