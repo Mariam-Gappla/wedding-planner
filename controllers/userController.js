@@ -159,4 +159,43 @@ const deleteUser = async (req, res, next) => {
   }
 };
 
-module.exports = { register, login, getAllUsers, getUserById,getUserByRole,deleteUser };
+const getUserGrowth = async (req, res, next) => {
+  try {
+    // Aggregation pipeline to group users by month and count them
+    const growth = await User.aggregate([
+      {
+        $group: {
+          _id: { 
+            year: { $year: "$createdAt" },
+            month: { $month: "$createdAt" }
+          },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $sort: {
+          "_id.year": 1,
+          "_id.month": 1
+        }
+      }
+    ]);
+
+    // Transform the data to a simpler format if you want, e.g. ["2023-01", 10], etc
+    const result = growth.map(item => {
+      const monthStr = item._id.month.toString().padStart(2, '0');
+      return {
+        month: `${item._id.year}-${monthStr}`,
+        count: item.count
+      }
+    });
+
+    res.status(200).send({
+      status: res.statusCode,
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { register, login, getAllUsers, getUserById,getUserByRole,deleteUser,getUserGrowth };
