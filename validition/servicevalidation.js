@@ -59,6 +59,9 @@ const serviceSchema = Joi.object({
  likes:Joi.string().messages({
     'string.base': "likes must be a string",
   }),
+  status:Joi.string().messages({
+    'string.base': "status must be a string",
+  })
 });
 
 module.exports={

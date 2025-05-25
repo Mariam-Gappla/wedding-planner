@@ -158,5 +158,23 @@ const deleteUser = async (req, res, next) => {
     next(err);
   }
 };
-
-module.exports = { register, login, getAllUsers, getUserById,getUserByRole,deleteUser };
+// user and orders
+const getUserOrders = async (req, res, next) => {
+    try {
+        const user = await User.find().populate('orders');
+        if (!user) {
+            return res.status(404).send({
+                status: res.statusCode,
+                message: "User not found"
+            });
+        }
+        res.status(200).send({
+            status: res.statusCode,
+            data: user
+        });
+    }
+    catch (err) {
+        next(err);
+    }
+}
+module.exports = { register, login, getAllUsers, getUserById,getUserByRole,deleteUser,getUserOrders };

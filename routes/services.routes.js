@@ -9,23 +9,23 @@ const fs = require('fs');
 router.use(express.static("images"));
 const { serviceSchema } = require('../validition/servicevalidation');
 //get all services
-router.get("/all", async(req,res,next)=>{
-    try{
-      console.log("allservices");
-        const allservices= await Service.find({});
-        if(!allservices){
+router.get("/all", async (req, res, next) => {
+    try {
+        console.log("allservices");
+        const allservices = await Service.find({});
+        if (!allservices) {
             return res.status(200).send({
-                status:res.status,
-                message:"there is no services"
+                status: res.status,
+                message: "there is no services"
             })
         }
         res.status(200).send({
-            status:res.status,
-            data:allservices
+            status: res.status,
+            data: allservices
         })
 
     }
-    catch(err){
+    catch (err) {
         next(err);
     }
 })
@@ -107,6 +107,96 @@ router.post('/add', upload.fields([
         next(err);
     }
 });
+//get all services with packages
+router.get("/servicespackages", async (req, res, next) => {
+    try {
+        const servicesWithPackages = await Service.find({})
+            .populate({
+                path: 'packages', // populate الحقل "packages" في الـ Service
+            });
+        if (!servicesWithPackages) {
+            return res.status(200).send({
+                status: res.status,
+                message: "there is no services"
+            })
+        }
+        res.status(200).send({
+            status: res.status,
+            data: servicesWithPackages
+        })
+    } catch (err) {
+        next(err);
+    }
+});
+//sort services by max and min price
+router.get("/sort", async (req, res, next) => {
+        console.log("sort");
+        const sortBy = req.query.sortBy; // 'asc' or 'desc'
+        const sortOrder = sortBy === 'asc' ? 1 : -1; // 1 for ascending, -1 for descending
+
+        if (!sortBy) {
+            return res.status(400).send({
+                status: res.status,
+                message: "Invalid sort parameter. Use 'asc' or 'desc'."
+            });
+        }
+        try {
+            if (sortOrder == 1) {
+                const services = await Service.aggregate([
+                    {
+                        $lookup: {
+                            from: 'packages',              // اسم مجموعة الباكدجات
+                            localField: '_id',             // يربط _id من service
+                            foreignField: 'serviceId',     // مع serviceId في package
+                            as: 'packages'
+                        }
+                    },
+                    {
+                        $addFields: {
+                            minPackagePrice: { $min: '$packages.price' }  // أقل سعر باكدج
+                        }
+                    },
+                    {
+                        $sort: { minPackagePrice: 1 }  // ترتيب تنازلي
+                    }
+                ]);
+                res.status(200).send({
+                    status: res.status,
+                    data: services
+                })
+            }
+            else {
+                const services = await Service.aggregate([
+                    {
+                        $lookup: {
+                            from: 'packages',              // اسم مجموعة الباكدجات
+                            localField: '_id',             // يربط _id من service
+                            foreignField: 'serviceId',     // مع serviceId في package
+                            as: 'packages'
+                        }
+                    },
+                    {
+                        $addFields: {
+                            minPackagePrice: { $min: '$packages.price' }  // أقل سعر باكدج
+                        }
+                    },
+                    {
+                        $sort: { minPackagePrice: -1 }  // ترتيب تصاعدي
+                    }
+                ]);
+                res.status(200).send({
+                    status: res.status,
+                    data: services
+                })
+            }
+
+
+        }
+    
+        catch (err) {
+            next(err);
+        }
+    });
 //update service
 router.patch("/:id", upload.fields([
     { name: "image", maxCount: 1 },
@@ -193,15 +283,15 @@ router.delete("/:id", async (req, res, next) => {
 
             //  حذف صورة البروفايل من السيرفر
             if (findservice.profileImage) {
-                const imageName = findservice.profileImage.replace(/^images[\\/]/, ''); 
-                const profileImagePath = path.join(__dirname, '..','images', imageName);
+                const imageName = findservice.profileImage.replace(/^images[\\/]/, '');
+                const profileImagePath = path.join(__dirname, '..', 'images', imageName);
                 fs.unlink(profileImagePath, (err) => {
                     if (err) console.error("Error deleting profile image:", err);
                 });
             }
             //  حذف كل صور الخدمة من السيرفر
             for (const img of findservice.serviceImage) {
-                 const imageName = img.replace(/^images[\\/]/, ''); // إزالة المجلد من البداي
+                const imageName = img.replace(/^images[\\/]/, ''); // إزالة المجلد من البداي
                 const imagePath = path.join(__dirname, '..', 'images', imageName);
                 fs.unlink(imagePath, (err) => {
                     if (err) console.error(`Error deleting service image ${img}:`, err);
@@ -209,7 +299,7 @@ router.delete("/:id", async (req, res, next) => {
             }
             // 🧾 حذف الخدمة من قاعدة البيانات
             await Service.findByIdAndDelete(id);
-           
+
             if (!findservice) {
                 return res.status(200).send({
                     status: res.status,
@@ -308,6 +398,11 @@ router.get("/packages/:id", async (req, res, next) => {
         next(err);
     }
 });
+
+
+
+
+
 
 
 

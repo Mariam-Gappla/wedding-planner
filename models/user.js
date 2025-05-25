@@ -21,6 +21,14 @@ const userSchema=new mongoose.Schema({
      role: { type: String },
      createdAt: { type: Date, default: Date.now },
 });
+userSchema.virtual('orders', {
+    ref: 'Order',
+    localField: '_id',
+    foreignField: 'userId'
+});
+// 👇 Ensure virtuals are included in toObject and toJSON
+userSchema.set('toObject', { virtuals: true });
+userSchema.set('toJSON', { virtuals: true });
 
 const User=mongoose.model("User",userSchema);
 module.exports=User;
