@@ -30,7 +30,6 @@ router.get("/all", async (req, res, next) => {
     }
 })
 //add service
-
 router.post('/add', upload.fields([
     { name: "image", maxCount: 1 },
     { name: "serviceimages", maxCount: 10 },
@@ -91,7 +90,6 @@ router.post('/add', upload.fields([
             facebookLink,
             instgrameLink,
             likes,
-            status, // ✅ هنا بنخزن الحالة
             vendorId: req.user.id
         });
 
@@ -195,6 +193,52 @@ router.get("/sort", async (req, res, next) => {
             next(err);
         }
     });
+ // sort services by likes
+router.get("/sortlikes", async (req, res, next) => {
+  try {
+    const services = await Service.aggregate([
+      {
+        $addFields: {
+          likesCount: { $size: { $ifNull: ["$likes", []] } }
+        }
+      },
+      { $sort: { likesCount: -1 } }
+    ]);
+
+    if (!services || services.length === 0) {
+      return res.status(200).send({
+        status: res.statusCode,
+        message: "No services found"
+      });
+    }
+
+    res.status(200).send({
+      status: res.statusCode,
+      data: services
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// sort services by newest
+router.get("/sortnewest", async (req, res, next) => {
+    try {
+        const services = await Service.find({}).sort({ createdAt: -1 });
+        if (!services || services.length === 0) {
+            return res.status(200).send({
+                status: res.status,
+                message: "No services found"
+            });
+        }
+        res.status(200).send({
+            status: res.status,
+            data: services
+        });
+    } catch (err) {
+        next(err);
+    }
+});
 //update service
 router.patch("/:id", upload.fields([
     { name: "image", maxCount: 1 },
@@ -249,6 +293,7 @@ router.patch("/:id", upload.fields([
             facebookLink: req.body.facebookLink || findService.facebookLink,
             instgrameLink: req.body.instgrameLink || findService.instgrameLink,
             likes: req.body.likes || findService.likes,
+            status: req.body.status || findService.status,
             vendorId: req.user._id,
             profileImage: newProfileImage,
             serviceImage: [...keepImages, ...newServiceImages],  // خزن الصور المحتفظ بها + الجديدة
@@ -395,6 +440,40 @@ router.get("/packages/:id", async (req, res, next) => {
         next(err);
     }
 });
+// add like to service
+// PATCH /services/:id/like
+router.patch("/like/:id", async (req, res, next) => {
+  try {
+    const serviceId = req.params.id;
+    const userId = req.body.userId;
+
+    const service = await Service.findById(serviceId);
+    if (!service) {
+      return res.status(404).json({ message: "Service not found" });
+    }
+
+    const alreadyLiked = service.likes.includes(userId);
+
+    if (alreadyLiked) {
+      // شيل اللايك
+      service.likes = service.likes.filter(id => id.toString() !== userId);
+    } else {
+      // ضيف اللايك
+      service.likes.push(userId);
+    }
+
+    await service.save();
+
+    res.status(200).json({
+      message: alreadyLiked ? "Like removed" : "Liked successfully",
+      totalLikes: service.likes.length,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+
 
 
 

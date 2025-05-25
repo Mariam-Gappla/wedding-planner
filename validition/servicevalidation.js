@@ -56,8 +56,12 @@ const serviceSchema = Joi.object({
  instgrameLink:Joi.string().messages({
     'string.base': "instgrameLink must be a string",
   }),
- likes:Joi.string().messages({
-    'string.base': "likes must be a string",
+ likes: Joi.array()
+  .items(Joi.string().messages({
+    'string.base': 'Each like must be a string (user ID)',
+  }))
+  .messages({
+    'array.base': 'likes must be an array of strings (user IDs)',
   }),
   status:Joi.string().messages({
     'string.base': "status must be a string",

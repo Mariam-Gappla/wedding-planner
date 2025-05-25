@@ -48,7 +48,7 @@ const login = async (req, res, next) => {
         if (!user) {
             return res.status(401).send({
                 status: res.statusCode,
-                message: "you have account"
+                message: "you have not account"
             })
         }
         const ismatch = await bcrypt.compare(password, user.password);
@@ -158,7 +158,6 @@ const deleteUser = async (req, res, next) => {
     next(err);
   }
 };
-<<<<<<< HEAD
 // user and orders
 const getUserOrders = async (req, res, next) => {
     try {
@@ -178,9 +177,6 @@ const getUserOrders = async (req, res, next) => {
         next(err);
     }
 }
-module.exports = { register, login, getAllUsers, getUserById,getUserByRole,deleteUser,getUserOrders };
-=======
-
 const getUserGrowth = async (req, res, next) => {
   try {
     // Aggregation pipeline to group users by month and count them
@@ -220,5 +216,4 @@ const getUserGrowth = async (req, res, next) => {
   }
 };
 
-module.exports = { register, login, getAllUsers, getUserById,getUserByRole,deleteUser,getUserGrowth };
->>>>>>> 6a0e3fc5ff6194d5d6745af4bc0252f1c4a835d3
+module.exports = { register, login, getAllUsers, getUserById,getUserByRole,deleteUser,getUserGrowth,getUserOrders};
