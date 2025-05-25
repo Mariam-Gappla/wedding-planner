@@ -10,4 +10,6 @@ router.patch('/:id',getUserById);
 router.delete("/:id",deleteUser);
 router.get('/userorders',getUserOrders);
 router.get('/role',getUserByRole);
+router.get('/growth', getUserGrowth);
+
 module.exports=router;
