@@ -215,5 +215,27 @@ const getUserGrowth = async (req, res, next) => {
     next(err);
   }
 };
+// getRoleByUserId
+const getRoleByUserId = async (req, res, next) => {
+  try {
+    const userId = req.params.userId;
 
-module.exports = { register, login, getAllUsers, getUserById,getUserByRole,deleteUser,getUserGrowth,getUserOrders};
+    const user = await User.findById(userId).select('role');
+
+    if (!user) {
+      return res.status(404).send({
+        status: res.statusCode,
+        message: "User not found"
+      });
+    }
+
+    res.status(200).send({
+      status: res.statusCode,
+      role: user.role
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { register, login, getAllUsers, getUserById,getUserByRole,deleteUser,getUserGrowth,getUserOrders, getRoleByUserId };

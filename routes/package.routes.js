@@ -6,6 +6,70 @@ const upload = require("../config/uploadimage");
 const User = require("../models/user");
 const { packagevalidation } = require("../validition/packagevalidation");
 
+router.get('/lowest-by-category/:category', async (req, res) => {
+  try {
+    const { category } = req.params;
+
+    // Step 1: Aggregate packages to find average price per service
+    const result = await Package.aggregate([
+      {
+        $lookup: {
+          from: 'services',
+          localField: 'serviceId',
+          foreignField: '_id',
+          as: 'service'
+        }
+      },
+      { $unwind: '$service' },
+      {
+        $match: {
+          'service.category': category
+        }
+      },
+      {
+        $group: {
+          _id: '$serviceId',
+          avgPrice: { $avg: '$price' },
+          serviceInfo: { $first: '$service' }
+        }
+      },
+      {
+        $sort: { avgPrice: 1 }
+      },
+      {
+        $limit: 1
+      }
+    ]);
+
+    if (result.length === 0) {
+      return res.status(404).json({ message: 'No services found in this category.' });
+    }
+
+    const lowestService = result[0].serviceInfo;
+
+    // Step 2: Get all packages for that service
+const packages = await Package.find({ serviceId: lowestService._id });
+
+if (packages.length === 0) {
+  return res.status(404).json({ message: 'No packages found for this service.' });
+}
+
+// Calculate the minimum price among all packages
+const minPrice = Math.min(...packages.map(pkg => pkg.price));
+
+res.status(200).json({
+  service: lowestService,
+  packages,
+  minPrice // 👈 added here
+});
+
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+    
+
 // Add Package
 router.post("/add/:id", async (req, res, next) => {
     // التحقق من البيانات باستخدام Joi أولاً
@@ -58,6 +122,7 @@ router.post("/add/:id", async (req, res, next) => {
         });
     }
 });
+
 
 // Get All Packages
 router.get("/", async (req, res, next) => {
@@ -148,5 +213,6 @@ router.delete("/:id", async (req, res, next) => {
         next(err);
     }
 });
+
 
 module.exports = router;
