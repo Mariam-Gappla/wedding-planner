@@ -10,8 +10,13 @@ const reviewRouter = require("./routes/review.routes");
 const jwt=require("jsonwebtoken");
 const paymentRoutes = require("./routes/payment.routes");
 // Middleware
-app.use(cors());
-app.use(express.json({ limit: '50mb' }));
+app.use(
+  cors({
+    origin: "http://localhost:4200", // أو رابط الفرونت
+    credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization"], // مهم!
+  })
+);app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
  // For parsing JSON request bodies
 app.use('/images', express.static('images'));

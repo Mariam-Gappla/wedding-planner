@@ -5,7 +5,7 @@ const packageSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  price:{type: String,
+  price:{type: Number,
     required: true,},
   serviceId: {
     type: mongoose.Schema.Types.ObjectId,
