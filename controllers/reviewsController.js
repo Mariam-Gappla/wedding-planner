@@ -102,8 +102,177 @@ const getReviewsByVendorId = async (req, res) => {
   }
 };
 
+const getReviewsByServiceId = async (req, res) => {
+  const { serviceId } = req.params;
+
+  try {
+    if (!serviceId) {
+      return res.status(400).json({ message: "Service ID is required." });
+    }
+
+    const reviews = await Review.find({ serviceId })
+      .populate('userId') // ✅ Full user info
+      .populate('vendorId', 'name'); // Still only vendor name (optional)
+
+    if (reviews.length === 0) {
+      return res.status(200).json({ message: "No reviews found for this service." });
+    }
+
+    res.status(200).json(reviews);
+  } catch (error) {
+    console.error("Error fetching reviews by service ID:", error);
+    res.status(500).json({ message: "Server error while fetching service reviews." });
+  }
+};
+
+const getTopRatedVendors = async (req, res) => {
+  try {
+    const topVendors = await Review.aggregate([
+      {
+        $group: {
+          _id: "$vendorId",
+          averageRating: { $avg: "$rate" },
+          totalReviews: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { averageRating: -1 } // Descending
+      },
+      {
+        $lookup: {
+          from: "users", // ⚠️ This should match your actual vendors collection name
+          localField: "_id",
+          foreignField: "_id",
+          as: "vendorDetails"
+        }
+      },
+      {
+        $unwind: "$vendorDetails"
+      },
+      {
+        $project: {
+          _id: 0,
+          vendorId: "$_id",
+          averageRating: { $round: ["$averageRating", 2] },
+          totalReviews: 1,
+          vendorName: "$vendorDetails.name"
+        }
+      }
+    ]);
+
+    res.status(200).json(topVendors);
+  } catch (error) {
+    console.error("Error fetching top-rated vendors:", error);
+    res.status(500).json({ message: "Server error while fetching top-rated vendors." });
+  }
+};
+
+const getTopRatedVendorsWithTopServiceByCategory = async (req, res) => {
+  try {
+    const topVendorsByCategory = await Review.aggregate([
+      // Join services on vendorId to get category and service details
+      {
+        $lookup: {
+          from: "services",
+          localField: "vendorId",
+          foreignField: "vendorId",
+          as: "services"
+        }
+      },
+
+      // Unwind services array (multiple services per vendor)
+      { $unwind: "$services" },
+
+      // Group by category, vendorId, and serviceId to get avg rating per service
+      {
+        $group: {
+          _id: {
+            category: "$services.category",
+            vendorId: "$vendorId",
+            serviceId: "$services._id",
+            serviceTitle: "$services.title",
+            serviceImage: "$services.profileImage"
+          },
+          avgServiceRating: { $avg: "$rate" },
+          totalReviews: { $sum: 1 }
+        }
+      },
+
+      // Group by category & vendorId to find the top-rated service per vendor
+      {
+        $sort: {
+          "_id.category": 1,
+          "_id.vendorId": 1,
+          avgServiceRating: -1 // sort services desc by rating
+        }
+      },
+      {
+        $group: {
+          _id: {
+            category: "$_id.category",
+            vendorId: "$_id.vendorId"
+          },
+          topService: {
+            $first: {
+              serviceId: "$_id.serviceId",
+              serviceTitle: "$_id.serviceTitle",
+              serviceImage: "$_id.serviceImage",
+              avgServiceRating: { $round: ["$avgServiceRating", 2] },
+              totalReviews: "$totalReviews"
+            }
+          }
+        }
+      },
+
+      // Group by category to get the top vendor by highest service rating
+      {
+        $sort: {
+          "_id.category": 1,
+          "topService.avgServiceRating": -1
+        }
+      },
+      {
+        $group: {
+          _id: "$_id.category",
+          topVendor: { $first: "$_id.vendorId" },
+          topService: { $first: "$topService" }
+        }
+      },
+
+      // Lookup vendor details from users collection
+      {
+        $lookup: {
+          from: "users",
+          localField: "topVendor",
+          foreignField: "_id",
+          as: "vendorDetails"
+        }
+      },
+      { $unwind: "$vendorDetails" },
+
+      // Format output
+      {
+        $project: {
+          _id: 0,
+          category: "$_id",
+          vendorId: "$topVendor",
+          vendorName: "$vendorDetails.name",
+          topService: 1
+        }
+      }
+    ]);
+
+    res.status(200).json(topVendorsByCategory);
+  } catch (error) {
+    console.error("Error fetching top-rated vendors with top services by category:", error);
+    res.status(500).json({ message: "Server error while fetching top-rated vendors with top services by category." });
+  }
+};
 
 module.exports = {
   createReview,
-  getReviewsByVendorId
+  getReviewsByVendorId,
+  getReviewsByServiceId,
+  getTopRatedVendors,
+  getTopRatedVendorsWithTopServiceByCategory
 };
