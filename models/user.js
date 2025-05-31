@@ -15,9 +15,6 @@ const userSchema=new mongoose.Schema({
         type:"string",
         required:true,
     },
-    address:{
-        type:"string",
-    },
      role: { type: String },
      createdAt: { type: Date, default: Date.now },
 });
