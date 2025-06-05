@@ -67,7 +67,6 @@ router.post('/add', upload.fields([
 
         const profileImageFile = req.files?.image?.[0];
         const serviceImageFiles = req.files?.serviceimages || [];
-
         const profileImagePath = profileImageFile
             ? saveImage(profileImageFile.buffer, Date.now() + '-' + profileImageFile.originalname)
             : "";
@@ -75,7 +74,7 @@ router.post('/add', upload.fields([
         const serviceImagePaths = serviceImageFiles.map(file =>
             saveImage(file.buffer, Date.now() + '-' + file.originalname)
         );
-
+         console.log(serviceImagePaths)
         const { title, category, exprience, serviceDetails, address, phone, facebookLink, instgrameLink, likes } = req.body;
 
         const service = await Service.create({
@@ -92,7 +91,7 @@ router.post('/add', upload.fields([
             likes,
             vendorId: req.user.id
         });
-
+           console.log(service)
         res.status(200).send({
             status: res.statusCode,
             data: service
@@ -376,7 +375,7 @@ router.get("/:id", async (req, res, next) => {
                 message: "this vendor does not exist"
             })
         }
-        const vendorservices = await Service.find({ vendorId: id })
+        const vendorservices = await Service.find({ vendorId: id, status: "Accepted" })
         if (!vendorservices) {
             return res.status(200).send({
                 status: res.status,
@@ -398,7 +397,7 @@ router.get("/", async (req, res, next) => {
     try {
         const category = req.query.category;
         console.log(category)
-        const servicesWithPackagesAndOrders = await Service.find({ category: category })
+        const servicesWithPackagesAndOrders = await Service.find({ category: category, status: "Accepted" })
             .populate({
                 path: 'packages', // populate الحقل "packages" في الـ Service
             });
@@ -472,6 +471,38 @@ router.patch("/like/:id", async (req, res, next) => {
     next(err);
   }
 });
+
+router.patch("/status/:id", async (req, res, next) => {
+    try {
+        const serviceId = req.params.id;
+        const { status } = req.body;
+
+        // تحقق من الصلاحيات هنا (مثلاً if req.user.role !== 'Admin')
+
+        const allowedStatuses = ["Accepted", "Pending", "Refused"];
+        if (!allowedStatuses.includes(status)) {
+            return res.status(400).send({ message: "Invalid status value" });
+        }
+
+        const updatedService = await Service.findByIdAndUpdate(
+            serviceId,
+            { status },
+            { new: true }
+        );
+
+        if (!updatedService) {
+            return res.status(404).send({ message: "Service not found" });
+        }
+
+        res.status(200).send({
+            message: "Service status updated successfully",
+            data: updatedService
+        });
+    } catch (err) {
+        next(err);
+    }
+});
+
 
 
 

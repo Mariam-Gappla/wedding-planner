@@ -1,5 +1,4 @@
 const joi = require('joi');
-
 const registerSchema = joi.object({
     username: joi.string().min(3).max(30).required().messages({
         'string.empty': "username is required",

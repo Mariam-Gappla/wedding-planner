@@ -1,31 +1,32 @@
 const mongoose = require('mongoose');
 
 const serviceSchema = new mongoose.Schema({
-  title: { type: String,require:true },
-  category:{ type: String,require:true },
-  exprience:{ type: String,require:true },
-  profileImage: { type: String,require:true},
-  serviceImage:[{ type: String,require:true }],
- serviceDetails: { type: String ,require:true},
- Address:{ type: String },
- phone:{ type: String,require:true },
- facebookLink:{ type: String},
- instgrameLink:{ type: String},
- likes: [{
+  title: { type: String, required: true },
+  category: { type: String, required: true },
+  exprience: { type: String, required: true },
+  profileImage: { type: String, required: true },
+  serviceImage: [{ type: String, required: true }],
+  serviceDetails: { type: String, required: true },
+  Address: { type: String },
+  phone: { type: String, required: true },
+  facebookLink: { type: String },
+  instgrameLink: { type: String },
+  likes: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }],
- status: {
-  type: String,
-  enum: ["Accepted", "Pending", "Refused"],
-  default: "Pending" 
-},
- vendorId: {
-     type: mongoose.Schema.Types.ObjectId,
-     ref: 'User', 
-   },
+  status: {
+    type: String,
+    enum: ["Accepted", "Pending", "Refused"],
+    default: "Pending"
+  },
+  vendorId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  },
   createdAt: { type: Date, default: Date.now },
 });
+
 serviceSchema.virtual('packages', {
   ref: 'Package',
   localField: '_id',
