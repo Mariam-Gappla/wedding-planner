@@ -42,8 +42,9 @@ router.get('/lowest-by-category/:category', async (req, res) => {
     ]);
 
     if (result.length === 0) {
-      return res.status(404).json({ message: 'No services found in this category.' });
-    }
+  return res.json([]);
+}
+
 
     const lowestService = result[0].serviceInfo;
 
@@ -90,11 +91,13 @@ router.post("/add/:id", async (req, res, next) => {
     // العثور على الخدمة باستخدام Mongoose
     const service = await Service.find({ vendorId: VendorId, _id: serviceid });
     if (!service) {
-        return res.status(404).send({
-            status: 404,
-            message: "No service found for this vendor"
-        });
-    }
+    return res.status(200).send({
+        status: 200,
+        message: "No service found for this vendor",
+        data: []
+    });
+}
+
 
     // إذا كان الدور هو "Vendor"
     if (role === "Vendor") {

@@ -308,7 +308,7 @@ const deleteOrder = async (req, res, next) => {
 // Get confirmed orders
 const getConfirmedOrders = async (req, res, next) => {
   try {
-    const orders = await Order.find({ status: "confirmed" })
+    const orders = await Order.find({ status: { $in: ["confirmed", "paid"] } })
       .populate({
         path: "package",
         populate: {

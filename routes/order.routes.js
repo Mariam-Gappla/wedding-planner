@@ -26,12 +26,12 @@ router.patch("/:orderId/status", updateOrderStatus);
 
 // GET ORDERS with optional filters: status and vendorId
 router.get("/filter", filterOrdersbyStatusAndVendorId);
+router.get("/confirmed", getConfirmedOrders);
 
 router.get("/user/:userId", getOrdersByUserId);
 router.get("/:id", getOrderById);
 router.delete("/:orderId", deleteOrder);
 
-router.get("/confirmed", getConfirmedOrders);
 
 
 module.exports = router;
