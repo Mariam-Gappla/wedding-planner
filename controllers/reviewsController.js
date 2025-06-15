@@ -23,7 +23,7 @@ const createReview = async (req, res) => {
     // Step 1: Check if user has a confirmed order linked to the service & vendor
     const confirmedOrders = await Order.find({
       userId,
-      status: "confirmed",
+      status: { $in: ["confirmed", "paid"] },
       date: { $lte: reviewDate }
     }).populate({
       path: 'package',
