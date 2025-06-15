@@ -1,17 +1,20 @@
-const express = require("express");
-const router = express.Router();
-const multer = require("multer");
-const path = require("path");
-const PaymentController = require("../controllers/payment.controller");
+const express = require('express');
+const router = express.Router()
+const upload = require('../config/uploadimage');
+router.use(express.static("images"));
+const paymentController = require("../controllers/payment.controller");
 
-const storge = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "uploads");
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + path.extname(file.originalname));
-  },
-});
-const upload = multer({ storage: storge });
-router.post('/payment', upload.single('screenshot'), PaymentController.createPayment);
+// Create payment
+router.post(
+  '/',
+  upload.fields([{ name: 'screenshot', maxCount: 1 }]),
+  paymentController.createPayment
+);
+
+router.get('/order/:orderId', paymentController.getPaymentByOrderId);
+router.get('/:paymentId', paymentController.getPaymentByPaymentId);
+router.patch('/:paymentId/status', paymentController.updatePaymentStatusAndNote);
+
+
+
 module.exports = router;

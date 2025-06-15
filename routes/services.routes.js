@@ -102,6 +102,8 @@ router.post('/add', upload.fields([
         next(err);
     }
 });
+
+
 //get all services with packages
 router.get("/servicespackages", async (req, res, next) => {
     try {
