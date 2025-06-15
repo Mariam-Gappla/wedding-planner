@@ -11,17 +11,17 @@ const registerSchema = joi.object({
   'any.required': "email is required",
   'string.email': "email should be in the format example@gmail.com"
 }),
-    password: joi.string().min(3).max(9).pattern(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{3,9}$/).required().messages({
+    password: joi.string().min(3).max(9).pattern(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{3,11}$/).required().messages({
         'string.empty': "password is required",
         'any.required': "password is required",
         "string.pattern.base": "password should contain at least one number and one letter",
         "string.min": "password should be at least 3 characters and at most 9 characters",
         "string.max": "password should be at least 3 characters and at most 9 characters"
     }),
-    confirmPassword: joi.any().valid(joi.ref('password')).required().messages({
-    'any.only': "Passwords do not match",
-    'any.required': "Confirm password is required"
-  }),
+//     confirmPassword: joi.any().valid(joi.ref('password')).required().messages({
+//     'any.only': "Passwords do not match",
+//     'any.required': "Confirm password is required"
+//   }),
     role: joi.string().required().messages({
         'string.empty': "role is required",
         'any.required': "role is required"
@@ -29,12 +29,13 @@ const registerSchema = joi.object({
 });
 
 const forgetPasswordSchema = joi.object({
-    email: joi.string().pattern(/^[a-zA-Z]+@[a-zA-Z]+\.[a-zA-Z]{2,3}$/).required().messages({
-        'string.empty': "email is required",
-        'any.required': "email is required",
-        "string.pattern.base": "email should be in the format example@gmail.com"
-    }),
-    password: joi.string().min(3).max(9).pattern(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{3,9}$/).required().messages({
+    email: joi.string().email({ tlds: { allow: false } }).required().messages({
+    'string.empty': "email is required",
+    'any.required': "email is required",
+    'string.email': "email should be in the format example@gmail.com"
+}),
+
+    password: joi.string().min(3).max(9).pattern(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{3,11}$/).required().messages({
         'string.empty': "password is required",
         'any.required': "password is required",
         "string.pattern.base": "password should contain at least one number and one letter",
@@ -42,8 +43,11 @@ const forgetPasswordSchema = joi.object({
         "string.max": "password should be at least 3 characters and at most 9 characters"
     })
 });
-
+const makeAdminSchema = joi.object({
+  email: joi.string().email().required(),
+});
 module.exports = {
     registerSchema,
-    forgetPasswordSchema
+    forgetPasswordSchema,
+    makeAdminSchema
 };
