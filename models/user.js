@@ -15,8 +15,22 @@ const userSchema=new mongoose.Schema({
         type:"string",
         required:true,
     },
-     role: { type: String },
-     createdAt: { type: Date, default: Date.now },
+    address:{
+        type:"string",
+    },
+    paymentMethods: [
+    {
+      name: {
+        type: String,
+        required: true,
+      },
+      number: {
+        type: String, // payment number or identifier, optional depending on method
+      },
+    },
+  ],
+    role: { type: String },
+    createdAt: { type: Date, default: Date.now },
 });
 userSchema.virtual('orders', {
     ref: 'Order',

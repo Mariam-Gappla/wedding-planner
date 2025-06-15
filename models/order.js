@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 const orderSchema = new mongoose.Schema({
   status: { 
     type: String, 
-    enum: ['pending', 'confirmed', 'refused'], 
+    enum: ['pending', 'confirmed', 'refused', 'paid', 'payment_refused'], 
     default: 'pending' 
   },
   date: { 
@@ -14,7 +14,7 @@ const orderSchema = new mongoose.Schema({
   },
   method: {
     type: String,
-    enum: ['Visa', 'cash'], 
+    enum: ['online', 'cash'], 
     default: 'cash'         
   },
   total_price: Number,
@@ -35,12 +35,7 @@ full_name: {
     ref: 'User',
     required: true
   },
-
-  paymentId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Payment'
-  }
-});
+}, { timestamps: true });
 
 const Order = mongoose.model("Order", orderSchema);
 module.exports = Order;
