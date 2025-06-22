@@ -88,11 +88,11 @@ app.use((err, req, res, next) => {
 // ==============================
 // Start Server + Create Super Admin
 // ==============================
-const PORT = 3000;
+const port = process.env.PORT || 3000;
 
-app.listen(PORT, async () => {
+app.listen(port, async () => {
   await connectDB();
-  console.log(`🚀 Server running at http://localhost:${PORT}`);
+  console.log(`🚀 Server running at http://localhost:${port}`);
 
   const superAdminEmail = 'zaffa1034@gmail.com';
   const superAdminPassword = 'Zaffa123';
