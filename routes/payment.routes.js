@@ -1,7 +1,6 @@
 const express = require('express');
-const router = express.Router()
+const router = express.Router();
 const upload = require('../config/uploadimage');
-router.use(express.static("images"));
 const paymentController = require("../controllers/payment.controller");
 
 // Create payment
@@ -14,7 +13,5 @@ router.post(
 router.get('/order/:orderId', paymentController.getPaymentByOrderId);
 router.get('/:paymentId', paymentController.getPaymentByPaymentId);
 router.patch('/:paymentId/status', paymentController.updatePaymentStatusAndNote);
-
-
 
 module.exports = router;

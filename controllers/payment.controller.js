@@ -1,12 +1,11 @@
-const Order = require("../models/order");
 const path = require('path');
-const express = require('express');
-const router = express.Router();
-const fs = require('fs');
-router.use(express.static("images"));
+const fs = require('fs/promises');
+const Order = require("../models/order");
 const Payment = require("../models/payments");
+const User = require('../models/user');
 const { sendPaymentStatusEmail } = require('../utils/email');
-const User = require('../models/user'); // import User model if needed
+
+// === Create Payment ===
 const createPayment = async (req, res, next) => {
   try {
     const {
@@ -19,16 +18,8 @@ const createPayment = async (req, res, next) => {
       vendorId,
     } = req.body;
 
-    // Check for required fields
-    if (
-      !fullName ||
-      !phoneNumber ||
-      !amount ||
-      !paymentMethod ||
-      !userId ||
-      !orderId ||
-      !vendorId
-    ) {
+    // Validate input
+    if (!fullName || !phoneNumber || !amount || !paymentMethod || !userId || !orderId || !vendorId) {
       return res.status(400).json({ message: 'Missing required fields.' });
     }
 
@@ -44,17 +35,13 @@ const createPayment = async (req, res, next) => {
       return res.status(404).json({ message: 'Order not found.' });
     }
 
-    // Save screenshot
-    const saveImage = (fileBuffer, filename) => {
-      const fullPath = path.join(__dirname, '..', 'uploads', filename);
-      fs.writeFileSync(fullPath, fileBuffer);
-      return 'uploads/' + filename;
-    };
+    // Save screenshot to /uploads
+    const filename = Date.now() + '-' + screenshotFile.originalname;
+    const filePath = path.join(__dirname, '..', 'uploads', filename);
+    await fs.writeFile(filePath, screenshotFile.buffer);
+    const screenshotPath = 'uploads/' + filename;
 
-    const screenshotFilename = Date.now() + '-' + screenshotFile.originalname;
-    const screenshotPath = saveImage(screenshotFile.buffer, screenshotFilename);
-
-    // Create payment document with explicit default status
+    // Create payment
     const newPayment = await Payment.create({
       fullName,
       phoneNumber,
@@ -64,7 +51,7 @@ const createPayment = async (req, res, next) => {
       userId,
       orderId,
       vendorId,
-      status: 'pending', // <- Added this line to explicitly set status default
+      status: 'pending',
     });
 
     return res.status(201).json({
@@ -77,22 +64,19 @@ const createPayment = async (req, res, next) => {
   }
 };
 
+// === Get Payment by Order ID ===
 const getPaymentByOrderId = async (req, res, next) => {
   try {
     const { orderId } = req.params;
-
-    // Validate orderId
     if (!orderId) {
       return res.status(400).json({ message: 'Order ID is required.' });
     }
 
-    // Find payment by orderId
     const payment = await Payment.findOne({ orderId });
-
     if (!payment) {
       return res.status(200).json({
         status: 200,
-        message: 'No payment for this order',
+        message: 'No payment found for this order.',
         data: [],
       });
     }
@@ -107,22 +91,19 @@ const getPaymentByOrderId = async (req, res, next) => {
   }
 };
 
+// === Get Payment by Payment ID ===
 const getPaymentByPaymentId = async (req, res, next) => {
   try {
     const { paymentId } = req.params;
-
-    // Validate orderId
     if (!paymentId) {
       return res.status(400).json({ message: 'Payment ID is required.' });
     }
 
-    // Find payment by orderId
     const payment = await Payment.findById(paymentId);
-
     if (!payment) {
-      return res.status(200).json({
-        status: 200,
-        message: 'Error fetching payment',
+      return res.status(404).json({
+        status: 404,
+        message: 'Payment not found.',
         data: [],
       });
     }
@@ -137,49 +118,51 @@ const getPaymentByPaymentId = async (req, res, next) => {
   }
 };
 
+// === Update Payment Status and Note ===
 const updatePaymentStatusAndNote = async (req, res, next) => {
-    try {
-        const { paymentId } = req.params;
-        const { status, note } = req.body;
+  try {
+    const { paymentId } = req.params;
+    const { status, note } = req.body;
 
-        const allowedStatuses = ['pending', 'accepted', 'refused'];
-        if (status && !allowedStatuses.includes(status)) {
-            return res.status(400).json({ message: 'Invalid status value.' });
-        }
-
-        const updatedPayment = await Payment.findByIdAndUpdate(
-            paymentId,
-            {
-                ...(status && { status }),
-                ...(note !== undefined && { note })
-            },
-            { new: true }
-        );
-
-        if (!updatedPayment) {
-            return res.status(404).json({ message: 'Payment not found.' });
-        }
-
-        // ✅ Now send email to user
-        const user = await User.findById(updatedPayment.userId);
-        if (user && user.email) {
-            await sendPaymentStatusEmail(user.email, status, note);
-        } else {
-            console.warn('User email not found, skipping email.');
-        }
-
-        return res.status(200).json({
-            status: 200,
-            message: 'Payment updated successfully and email sent.',
-            data: updatedPayment,
-        });
-    } catch (error) {
-        next(error);
+    const allowedStatuses = ['pending', 'accepted', 'refused'];
+    if (status && !allowedStatuses.includes(status)) {
+      return res.status(400).json({ message: 'Invalid status value.' });
     }
+
+    const updatedPayment = await Payment.findByIdAndUpdate(
+      paymentId,
+      {
+        ...(status && { status }),
+        ...(note !== undefined && { note }),
+      },
+      { new: true }
+    );
+
+    if (!updatedPayment) {
+      return res.status(404).json({ message: 'Payment not found.' });
+    }
+
+    // Send email
+    const user = await User.findById(updatedPayment.userId);
+    if (user?.email) {
+      await sendPaymentStatusEmail(user.email, status, note);
+    } else {
+      console.warn('⚠️ User email not found, email not sent.');
+    }
+
+    return res.status(200).json({
+      status: 200,
+      message: 'Payment updated successfully.',
+      data: updatedPayment,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
+
 module.exports = {
   createPayment,
   getPaymentByOrderId,
   getPaymentByPaymentId,
-  updatePaymentStatusAndNote
+  updatePaymentStatusAndNote,
 };
