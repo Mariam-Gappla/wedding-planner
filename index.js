@@ -90,17 +90,13 @@ app.use((err, req, res, next) => {
 // ==============================
 const port = process.env.PORT || 3000;
 
-app.listen(port, async () => {
-  await connectDB();
-  console.log(`🚀 Server running at http://localhost:${port}`);
-
+const createSuperAdmin = async () => {
   const superAdminEmail = 'zaffa1034@gmail.com';
   const superAdminPassword = 'Zaffa123';
 
   try {
-    const superAdmin = await User.findOne({ email: superAdminEmail });
-
-    if (!superAdmin) {
+    const existingUser = await User.findOne({ email: superAdminEmail });
+    if (!existingUser) {
       const hashedPassword = await bcrypt.hash(superAdminPassword, 10);
       await User.create({
         username: 'zaffa',
@@ -109,12 +105,18 @@ app.listen(port, async () => {
         password: hashedPassword,
         role: 'super_admin',
       });
-
       console.log("✅ Super admin created!");
     } else {
       console.log("✅ Super admin already exists.");
     }
   } catch (err) {
-    console.error("❌ Error checking/creating super admin:", err.message);
+    console.error("❌ Error creating super admin:", err.message);
   }
+};
+
+connectDB().then(() => {
+  app.listen(port, () => {
+    console.log(`🚀 Server running at http://localhost:${port}`);
+    createSuperAdmin(); // call the async function here
+  });
 });
